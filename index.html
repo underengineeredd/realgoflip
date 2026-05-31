@@ -687,6 +687,11 @@
       unlockAdv: n,                 // higher levels allow nastier obstacle mix sooner
     };
   }
+  // FIXED coin rewards per level — they're hard, so beating one pays a set amount.
+  // big first-clear bonus, smaller reward on replays (so it's not an infinite farm).
+  function levelReward(n){ return 100 + (n-1)*50; }      // first clear: 100,150,200,...650
+  function levelReplayReward(n){ return 20 + (n-1)*8; }  // replay: 20,28,36,...108
+
 
   const P_R=0.024,G=0.00224,VMAX=0.55,BASE_SPEED=0.325,WALL=0.012;
   const GEM_R=0.022,GEM_OFFSET=0.9,PU_R=0.030;
@@ -849,16 +854,18 @@
   function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML='LEVEL '+curLevel+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
   function levelWin(){
     state='dead'; t=0; levelMode=false; lastLevel=curLevel; lastLevelWon=true;
-    if(curLevel>(save.levelsBeaten||0)){ save.levelsBeaten=curLevel; }
-    // bank coins from the level too
-    const mult=Math.min(4, 1 + runMaxStreak/20); runCoins=Math.round(points*mult)+runBonusCoins; save.coins+=runCoins; persist();
+    const firstClear = curLevel>(save.levelsBeaten||0);
+    if(firstClear){ save.levelsBeaten=curLevel; }
+    // FIXED reward: big bonus on first clear, small reward on replays
+    runCoins = firstClear ? levelReward(curLevel) : levelReplayReward(curLevel);
+    save.coins+=runCoins; persist();
     document.getElementById('goBig').textContent=points;
     document.getElementById('goStreak').textContent=runMaxStreak;
     document.getElementById('goBest').textContent=save.best;
     document.getElementById('goBestPts').textContent=save.bestPts;
     document.querySelector('#goView .goLabel').textContent='LEVEL '+curLevel+' CLEAR';
     const nb=document.getElementById('goNewBest'); nb.classList.add('isbest'); nb.querySelector('.gcV').textContent = (curLevel>=LEVEL_COUNT)?'ALL DONE!':'UNLOCKED '+(curLevel+1);
-    const ce=document.getElementById('coinEarned'); ce.innerHTML='+'+runCoins+' COINS'; ce.classList.remove('show'); void ce.offsetWidth; ce.classList.add('show');
+    const ce=document.getElementById('coinEarned'); ce.innerHTML='+'+runCoins+' COINS'+(firstClear?'  <span style="opacity:0.8;font-size:11px">(FIRST CLEAR)</span>':''); ce.classList.remove('show'); void ce.offsetWidth; ce.classList.add('show');
     setGoButtons('won');
     startView.classList.add('gone'); goView.classList.add('show'); void goView.offsetWidth;
     hud.style.opacity='0'; document.body.classList.remove('playing'); document.body.classList.remove('levels');
@@ -1518,7 +1525,8 @@
       const isNext = n===beaten+1;
       const el=document.createElement('div');
       el.className='lvl'+(locked?' locked':'')+(isBeaten?' beaten':'')+(isNext?' next':'');
-      el.innerHTML='<div class="lvlNum">'+n+'</div><div class="lvlMeta">'+levelParams(n).target+' GEMS</div>';
+      const meta = locked ? 'LOCKED' : (isBeaten ? '+'+levelReplayReward(n)+'⬦' : levelParams(n).target+' GEMS · +'+levelReward(n));
+      el.innerHTML='<div class="lvlNum">'+n+'</div><div class="lvlMeta">'+meta+'</div>';
       if(!locked){ el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); startLevel(n); }); }
       grid.appendChild(el);
     }
