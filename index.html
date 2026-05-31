@@ -197,7 +197,10 @@
   .lvl { aspect-ratio:1; border-radius:14px; border:1.5px solid rgba(255,255,255,0.12); background:rgba(10,12,20,0.7); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; position:relative; transition:transform .1s, box-shadow .15s; }
   .lvl:hover { transform:translateY(-2px); }
   .lvl .lvlNum { font-family:'Archivo Black',sans-serif; font-size:26px; color:#fff; }
-  .lvl .lvlMeta { font-size:8.5px; letter-spacing:1px; font-weight:700; color:#8fa0b4; }
+  .lvl .lvlMeta { font-size:8.5px; letter-spacing:0.5px; font-weight:700; color:#8fa0b4; }
+  .lvl .lvlCoins { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:3px; font-family:'Archivo Black',sans-serif; font-size:13px; color:#ffce3a; }
+  .lvl .lvlCoins .cdot { width:11px; height:11px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe27a, #f5b30c); box-shadow:0 0 6px rgba(245,179,12,0.5); }
+  .lvl.locked .lvlCoins { display:none; }
   .lvl.locked { opacity:0.4; cursor:default; }
   .lvl.locked .lvlNum { color:#5a6675; }
   .lvl.locked::after { content:'🔒'; position:absolute; font-size:13px; bottom:8px; }
@@ -322,7 +325,6 @@
     <!-- START VIEW -->
     <div id="startView">
       <div id="challengeBanner">🎯 BEAT <b>0</b> TO WIN THE CHALLENGE</div>
-      <div id="miniHint">tap to flip gravity · grab gems · don't crash</div>
       <div id="primaryRow">
         <div class="btn big" id="playBtn">PLAY</div>
         <div class="btn big alt" id="openLevels">LEVELS</div>
@@ -1525,8 +1527,11 @@
       const isNext = n===beaten+1;
       const el=document.createElement('div');
       el.className='lvl'+(locked?' locked':'')+(isBeaten?' beaten':'')+(isNext?' next':'');
-      const meta = locked ? 'LOCKED' : (isBeaten ? '+'+levelReplayReward(n)+'⬦' : levelParams(n).target+' GEMS · +'+levelReward(n));
-      el.innerHTML='<div class="lvlNum">'+n+'</div><div class="lvlMeta">'+meta+'</div>';
+      let meta;
+      if(locked){ meta='<div class="lvlMeta">LOCKED</div>'; }
+      else if(isBeaten){ meta='<div class="lvlMeta">'+levelParams(n).target+' gems</div><div class="lvlCoins"><span class="cdot"></span>'+levelReplayReward(n)+'</div>'; }
+      else { meta='<div class="lvlMeta">'+levelParams(n).target+' gems</div><div class="lvlCoins"><span class="cdot"></span>'+levelReward(n)+'</div>'; }
+      el.innerHTML='<div class="lvlNum">'+n+'</div>'+meta;
       if(!locked){ el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); startLevel(n); }); }
       grid.appendChild(el);
     }
