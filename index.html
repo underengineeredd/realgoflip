@@ -198,6 +198,8 @@
   .lvl:hover { transform:translateY(-2px); }
   .lvl .lvlNum { font-family:'Archivo Black',sans-serif; font-size:26px; color:#fff; }
   .lvl .lvlMeta { font-size:8.5px; letter-spacing:0.5px; font-weight:700; color:#8fa0b4; }
+  .lvl .lvlName { font-size:7.5px; letter-spacing:0.5px; font-weight:700; color:#8fa0b4; text-transform:uppercase; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 2px; }
+  .lvl.beaten .lvlName, .lvl.next .lvlName { color:#aeb9c6; }
   .lvl .lvlCoins { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:3px; font-family:'Archivo Black',sans-serif; font-size:13px; color:#ffce3a; }
   .lvl .lvlCoins .cdot { width:11px; height:11px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe27a, #f5b30c); box-shadow:0 0 6px rgba(245,179,12,0.5); }
   .lvl.locked .lvlCoins { display:none; }
@@ -673,20 +675,22 @@
   let levelTargetGems=0; // gems needed to clear the current level
   let lastLevel=0;       // the level most recently played (for retry/next on game-over)
   let lastLevelWon=false;
+  let lvlPowerupsSpawned=0; // how many guaranteed powerups have spawned this level
   // seeded RNG used during level runs so each level is identical every time
   let lvlSeed=0;
   function lrnd(){ lvlSeed=(lvlSeed*1103515245+12345)>>>0; return lvlSeed/4294967296; }
   // unified random: deterministic during level mode, real otherwise
   function rng(){ return levelMode ? lrnd() : Math.random(); }
   const LEVEL_COUNT=12;
-  // per-level tuning: difficulty climbs with level number
+  // per-level tuning: difficulty climbs GENTLY. targets are modest so a couple misses
+  // don't tank the run, speed ramps slowly, gaps stay fair.
   function levelParams(n){
     const f=(n-1)/(LEVEL_COUNT-1); // 0..1
     return {
-      speed: 0.85 + f*0.7,          // scroll speed multiplier (0.85x -> 1.55x)
-      gap:   1.12 - f*0.34,         // gap size multiplier (roomy -> tight)
-      target: 8 + (n-1)*3,          // gems to clear: 8,11,14,...41
-      unlockAdv: n,                 // higher levels allow nastier obstacle mix sooner
+      speed: 0.82 + f*0.46,         // scroll speed multiplier (0.82x -> 1.28x) — gentler top end
+      gap:   1.18 - f*0.24,         // gap size multiplier (very roomy -> moderately tight, never brutal)
+      target: 6 + Math.round((n-1)*1.7), // gems to clear: 6,8,9,11,13,14,16,18,19,21,23,25 — much lower
+      unlockAdv: n,
     };
   }
   // FIXED coin rewards per level — they're hard, so beating one pays a set amount.
@@ -708,36 +712,37 @@
   window.addEventListener('resize', resize);
 
   // ============ OBSTACLES ============
-  // each level has a hand-authored obstacle mix (weighted) so it feels designed & varied,
-  // not just "same RNG but faster". types introduced gradually; later levels mix the nasty ones.
-  const LEVEL_RECIPES = {
-    1:  [['plain',5],['double',2],['wide',1]],
-    2:  [['plain',4],['double',3],['drift',2],['wide',1]],
-    3:  [['drift',4],['double',3],['plain',2],['wide',1]],
-    4:  [['pinch',4],['double',3],['drift',2],['plain',2]],
-    5:  [['drift',3],['pinch',3],['double',2],['laser',2],['plain',1]],
-    6:  [['laser',4],['pinch',2],['drift',2],['double',2]],
-    7:  [['laser',3],['triple',3],['pinch',2],['drift',1]],
-    8:  [['triple',4],['laser',3],['pinch',2],['double',1]],
-    9:  [['laser',3],['triple',3],['pinch',3],['drift',1]],
-    10: [['triple',3],['doublelaser',3],['laser',2],['pinch',2]],
-    11: [['doublelaser',4],['triple',3],['laser',2],['pinch',1]],
-    12: [['doublelaser',4],['triple',3],['laser',3],['pinch',2]],
+  // each level is its own world: a NAME, a unique obstacle DESIGN (pattern on the pipes),
+  // a hand-authored obstacle mix (personality), and a guaranteed number of powerups.
+  // difficulty introduced gently; new obstacle types (stagger, tunnel) add variety.
+  const LEVEL_DEFS = {
+    1:  { name:'WARMUP',    design:'plain',   powerups:1, recipe:[['plain',5],['wide',2],['double',1]] },
+    2:  { name:'DRIFTWOOD', design:'dots',    powerups:1, recipe:[['plain',3],['drift',4],['double',2],['wide',1]] },
+    3:  { name:'TUNNELS',   design:'grid',    powerups:2, recipe:[['tunnel',4],['plain',2],['double',2],['wide',1]] },
+    4:  { name:'WEAVE',     design:'stripes', powerups:2, recipe:[['stagger',4],['drift',3],['double',2],['plain',1]] },
+    5:  { name:'SQUEEZE',   design:'hazard',  powerups:2, recipe:[['pinch',4],['drift',2],['double',2],['plain',1]] },
+    6:  { name:'CROSSFIRE', design:'circuit', powerups:2, recipe:[['laser',4],['stagger',2],['drift',2],['double',1]] },
+    7:  { name:'TRIDENT',   design:'rivets',  powerups:3, recipe:[['triple',4],['laser',2],['pinch',2],['tunnel',1]] },
+    8:  { name:'GAUNTLET',  design:'spikes',  powerups:3, recipe:[['laser',3],['triple',3],['stagger',2],['pinch',2]] },
+    9:  { name:'OVERLOAD',  design:'circuit', powerups:3, recipe:[['laser',3],['triple',2],['pinch',2],['stagger',2],['tunnel',1]] },
+    10: { name:'DOUBLECROSS',design:'glow',   powerups:4, recipe:[['doublelaser',3],['triple',3],['laser',2],['stagger',2]] },
+    11: { name:'MELTDOWN',  design:'hazard',  powerups:4, recipe:[['doublelaser',4],['triple',2],['pinch',2],['laser',2]] },
+    12: { name:'SINGULARITY',design:'glow',   powerups:5, recipe:[['doublelaser',4],['triple',3],['laser',3],['stagger',2],['pinch',1]] },
   };
+  function levelDef(n){ return LEVEL_DEFS[n] || LEVEL_DEFS[12]; }
   function pickFromRecipe(recipe){
     let total=0; for(const [,w] of recipe) total+=w;
     let roll=rng()*total;
     for(const [type,w] of recipe){ roll-=w; if(roll<=0) return type; }
     return recipe[0][0];
   }
-  let lastLevelType=''; // avoid 3 identical in a row within a level
+  let lastLevelType=''; // avoid 2 identical in a row within a level
   function pickType(){
     if(levelMode){
       if(obsPassed<1) return 'plain'; // ease in with one plain
-      const recipe = LEVEL_RECIPES[curLevel] || LEVEL_RECIPES[12];
+      const recipe = levelDef(curLevel).recipe;
       let t=pickFromRecipe(recipe);
-      // avoid immediate repeats for variety (one re-roll)
-      if(t===lastLevelType) t=pickFromRecipe(recipe);
+      if(t===lastLevelType) t=pickFromRecipe(recipe); // one re-roll to avoid repeats
       lastLevelType=t;
       return t;
     }
@@ -754,7 +759,7 @@
     return 'plain';
   }
   function gapSpacing(){ const z=diffTier(); const t=Math.min(z*0.04,0.22); return H*(0.62-0.62*t)+player.r*2; }
-  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.35; const start=H*0.42; const sh=Math.min(z*0.05,0.30); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
+  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.5; const start=H*0.44; const sh=Math.min(z*0.04,0.26); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
 
   function makeObstacle(x){
     const type=pickType(); const margin=WALL*H+player.r*1.3; const gemR=GEM_R*H; const passed=obsPassed; const w=Math.max(26,H*0.05);
@@ -796,13 +801,28 @@
       const mo=Math.max(0,target/2-gemR-player.r*0.5);
       return { type:'pinch', x, w, gapY:gy, gapH:startG, targetH:target, startH:startG, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
     }
+    if(type==='stagger'){
+      // two narrow gaps, vertically offset — quick weave (S-curve feel)
+      const g=Math.max(player.r*2*2.0, gapHeight()*0.72); const us=H-2*margin;
+      const top=margin + rng()*(us*0.32);
+      const bot=H-margin - rng()*(us*0.32);
+      const gaps=[{y:top+g/2,h:g},{y:bot-g/2,h:g}]; const gg=gaps[rng()<0.5?0:1];
+      const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
+      return { type:'stagger', x, w:w*1.1, gaps, passed:false, gemY:gg.y+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
+    }
+    if(type==='tunnel'){
+      // a wider obstacle with a steady narrow corridor — hold your line through it
+      const g=Math.max(player.r*2*2.4, gapHeight()*0.78); const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const mo=Math.max(0,g/2-gemR-player.r*0.5);
+      return { type:'tunnel', x, w:w*2.6, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.5, gemGot:false };
+    }
     const g=gapHeight(); const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*(mx-mn); const mo=Math.max(0,g/2-gemR-player.r*0.5);
     const realGemY = gy+(rng()*2-1)*mo*gemOffsetFor(passed);
     const ob = { type:'plain', x, w, gapY:gy, gapH:g, passed:false, gemY:realGemY, gemGot:false };
     return ob;
   }
   function barsFor(o){
-    if(o.type==='double'||o.type==='triple'){ const g=[...o.gaps].sort((a,b)=>a.y-b.y); const sp=[]; let c=0; for(const gg of g){ sp.push({top:c,bot:gg.y-gg.h/2}); c=gg.y+gg.h/2; } sp.push({top:c,bot:H}); return sp; }
+    if(o.type==='double'||o.type==='triple'||o.type==='stagger'){ const g=[...o.gaps].sort((a,b)=>a.y-b.y); const sp=[]; let c=0; for(const gg of g){ sp.push({top:c,bot:gg.y-gg.h/2}); c=gg.y+gg.h/2; } sp.push({top:c,bot:H}); return sp; }
     const gt=o.gapY-o.gapH/2, gb=o.gapY+o.gapH/2; return [{top:0,bot:gt},{top:gb,bot:H}];
   }
 
@@ -845,7 +865,7 @@
   function showStartView(){ goView.classList.remove('show'); startView.classList.remove('gone'); }
   function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); }
   function startLevel(n){
-    levelMode=true; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType='';
+    levelMode=true; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType=''; lvlPowerupsSpawned=0;
     lvlSeed=(n*2654435761)>>>0; // deterministic seed per level
     levelsPanel.classList.remove('show');
     reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
@@ -853,7 +873,7 @@
     applyZoneCSS(0); updateLevelHUD();
     SFX.ui();
   }
-  function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML='LEVEL '+curLevel+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
+  function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML=levelDef(curLevel).name+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
   function levelWin(){
     state='dead'; t=0; levelMode=false; lastLevel=curLevel; lastLevelWon=true;
     const firstClear = curLevel>(save.levelsBeaten||0);
@@ -974,7 +994,21 @@
     spawnX-=dx;
     if(spawnX<W){ const nx=(obstacles.length?obstacles[obstacles.length-1].x:W)+gapSpacing(); obstacles.push(makeObstacle(nx)); spawnX=nx; }
 
-    if(points>=nextPowerupAt && rng()<0.5){ const ref=obstacles.find(o=>o.x>player.x+player.r); let py=ref?(ref.type==='double'?ref.gaps[0].y:ref.gapY):H*0.5; const kinds=['slow','shield','magnet','coins']; const kind=kinds[Math.floor(rng()*kinds.length)]; powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind}); nextPowerupAt=points+22+Math.floor(rng()*16); }
+    if(levelMode){
+      // guaranteed powerups: spread the level's quota across the gem target
+      const quota = levelDef(curLevel).powerups;
+      const spacing = levelTargetGems/(quota+1);
+      const milestone = Math.floor((lvlPowerupsSpawned+1)*spacing);
+      if(lvlPowerupsSpawned<quota && points>=milestone){
+        const ref=obstacles.find(o=>o.x>player.x+player.r);
+        let py=ref?(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'?ref.gaps[0].y:ref.gapY):H*0.5;
+        // weight shield/slow higher in harder levels so it stays fair
+        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','coins'] : ['slow','shield','magnet','coins'];
+        const kind=kinds[Math.floor(rng()*kinds.length)];
+        powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind});
+        lvlPowerupsSpawned++;
+      }
+    } else if(points>=nextPowerupAt && rng()<0.5){ const ref=obstacles.find(o=>o.x>player.x+player.r); let py=ref?(ref.type==='double'?ref.gaps[0].y:ref.gapY):H*0.5; const kinds=['slow','shield','magnet','coins']; const kind=kinds[Math.floor(rng()*kinds.length)]; powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind}); nextPowerupAt=points+22+Math.floor(rng()*16); }
 
     const gemR=GEM_R*H; const passedSoFar=obsPassed; const grabBonus=grabBonusFor(passedSoFar)*gemR;
 
@@ -1100,9 +1134,50 @@
     }
     ctx.restore();
   }
+  // per-level obstacle DESIGN overlays (drawn on top of the pipe fill, uses accent color, not palette)
+  function drawBarDesign(design, x, y, w, h, z){
+    if(h<6) return;
+    ctx.save();
+    ctx.beginPath(); roundRect(x,y,w,h,6); ctx.clip(); // keep design inside the pipe
+    const acc=z.accent;
+    if(design==='stripes'){ // diagonal stripes
+      ctx.strokeStyle=hexA(acc,0.18); ctx.lineWidth=4;
+      for(let d=-h; d<w+h; d+=14){ ctx.beginPath(); ctx.moveTo(x+d, y); ctx.lineTo(x+d-h, y+h); ctx.stroke(); }
+    } else if(design==='hazard'){ // hazard tape bands top & bottom
+      ctx.fillStyle=hexA(acc,0.22);
+      for(let d=-h; d<w+h; d+=16){ ctx.beginPath(); ctx.moveTo(x+d,y); ctx.lineTo(x+d+8,y); ctx.lineTo(x+d+8-12,y+12); ctx.lineTo(x+d-12,y+12); ctx.closePath(); ctx.fill(); }
+      const by=y+h-12; for(let d=-h; d<w+h; d+=16){ ctx.beginPath(); ctx.moveTo(x+d,by); ctx.lineTo(x+d+8,by); ctx.lineTo(x+d+8-12,by+12); ctx.lineTo(x+d-12,by+12); ctx.closePath(); ctx.fill(); }
+    } else if(design==='circuit'){ // circuit traces + nodes
+      ctx.strokeStyle=hexA(acc,0.30); ctx.fillStyle=hexA(acc,0.45); ctx.lineWidth=1.5;
+      const cx=x+w/2;
+      for(let yy=y+10; yy<y+h-6; yy+=18){ ctx.beginPath(); ctx.moveTo(cx,yy); ctx.lineTo(cx,yy+10); ctx.lineTo(cx+(yy%36?7:-7),yy+10); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,yy,2.2,0,6.2832); ctx.fill(); }
+    } else if(design==='rivets'){ // metal plate with rivets along edges
+      ctx.fillStyle=hexA(acc,0.40);
+      for(let yy=y+8; yy<y+h-4; yy+=16){ ctx.beginPath(); ctx.arc(x+6,yy,1.8,0,6.2832); ctx.fill(); ctx.beginPath(); ctx.arc(x+w-6,yy,1.8,0,6.2832); ctx.fill(); }
+      ctx.strokeStyle=hexA(acc,0.12); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x+w/2,y); ctx.lineTo(x+w/2,y+h); ctx.stroke();
+    } else if(design==='grid'){ // grid mesh
+      ctx.strokeStyle=hexA(acc,0.16); ctx.lineWidth=1;
+      for(let yy=y+8; yy<y+h; yy+=10){ ctx.beginPath(); ctx.moveTo(x,yy); ctx.lineTo(x+w,yy); ctx.stroke(); }
+      for(let xx=x+8; xx<x+w; xx+=10){ ctx.beginPath(); ctx.moveTo(xx,y); ctx.lineTo(xx,y+h); ctx.stroke(); }
+    } else if(design==='spikes'){ // jagged inner edge (drawn as triangles along the gap side handled by edge; here add chevrons)
+      ctx.fillStyle=hexA(acc,0.22);
+      for(let yy=y+6; yy<y+h-6; yy+=14){ ctx.beginPath(); ctx.moveTo(x+w/2-7,yy); ctx.lineTo(x+w/2+7,yy+4); ctx.lineTo(x+w/2-7,yy+8); ctx.closePath(); ctx.fill(); }
+    } else if(design==='glow'){ // inner glowing rim
+      ctx.shadowColor=acc; ctx.shadowBlur=12; ctx.strokeStyle=hexA(acc,0.5); ctx.lineWidth=2;
+      roundRect(x+2,y+2,w-4,h-4,5); ctx.stroke(); ctx.shadowBlur=0;
+    } else if(design==='dots'){ // dotted texture
+      ctx.fillStyle=hexA(acc,0.20);
+      for(let yy=y+9; yy<y+h; yy+=13){ for(let xx=x+9; xx<x+w; xx+=13){ ctx.beginPath(); ctx.arc(xx,yy,2,0,6.2832); ctx.fill(); } }
+    }
+    ctx.restore();
+  }
   function drawObstacle(o,z){
-    const spans=barsFor(o); ctx.fillStyle=z.obst;
-    for(const s of spans){ if(s.bot>s.top){ roundRect(o.x,s.top,o.w,s.bot-s.top,6); ctx.fill(); } }
+    const spans=barsFor(o);
+    const design = levelMode ? (LEVEL_DEFS[curLevel] && LEVEL_DEFS[curLevel].design) : null;
+    for(const s of spans){ if(s.bot>s.top){
+      ctx.fillStyle=z.obst; roundRect(o.x,s.top,o.w,s.bot-s.top,6); ctx.fill();
+      if(design) drawBarDesign(design, o.x, s.top, o.w, s.bot-s.top, z);
+    } }
     ctx.strokeStyle=z.accent; ctx.globalAlpha=0.5; ctx.lineWidth=3; ctx.beginPath();
     for(let i=0;i<spans.length;i++){ const s=spans[i]; if(i>0&&s.top>0){ ctx.moveTo(o.x,s.top); ctx.lineTo(o.x+o.w,s.top); } if(i<spans.length-1&&s.bot<H){ ctx.moveTo(o.x,s.bot); ctx.lineTo(o.x+o.w,s.bot); } }
     ctx.stroke(); ctx.globalAlpha=1;
@@ -1131,6 +1206,8 @@
       ctx.restore();
     }
     if(o.type==='pinch'){ ctx.fillStyle=z.accent; ctx.globalAlpha=0.5; ctx.font='bold 13px Space Mono'; ctx.textAlign='center'; ctx.fillText('»«',o.x+o.w/2,o.gapY+5); ctx.globalAlpha=1; ctx.textAlign='start'; }
+    if(o.type==='stagger'){ ctx.fillStyle=z.accent; ctx.globalAlpha=0.45; ctx.font='bold 12px Space Mono'; ctx.textAlign='center'; for(const gg of o.gaps){ ctx.fillText('≈',o.x+o.w/2,gg.y+4); } ctx.globalAlpha=1; ctx.textAlign='start'; }
+    if(o.type==='tunnel'){ ctx.strokeStyle=z.accent; ctx.globalAlpha=0.3; ctx.lineWidth=1.5; ctx.setLineDash([4,5]); const gt=o.gapY-o.gapH/2,gb=o.gapY+o.gapH/2; ctx.beginPath(); ctx.moveTo(o.x,gt); ctx.lineTo(o.x+o.w,gt); ctx.moveTo(o.x,gb); ctx.lineTo(o.x+o.w,gb); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; }
     if(!o.gemGot){ const gx=o.x+o.w/2, gr=GEM_R*H; const pr=gr*(1+0.12*Math.sin(scrollX*0.02+(o.gapY||0))); drawGem(gx,o.gemY,pr,z.accent,z.bgB); }
     // fake decoy gem: hollow grey diamond with an ✕, clearly different from the real glowing accent gem
   }
@@ -1529,8 +1606,8 @@
       el.className='lvl'+(locked?' locked':'')+(isBeaten?' beaten':'')+(isNext?' next':'');
       let meta;
       if(locked){ meta='<div class="lvlMeta">LOCKED</div>'; }
-      else if(isBeaten){ meta='<div class="lvlMeta">'+levelParams(n).target+' gems</div><div class="lvlCoins"><span class="cdot"></span>'+levelReplayReward(n)+'</div>'; }
-      else { meta='<div class="lvlMeta">'+levelParams(n).target+' gems</div><div class="lvlCoins"><span class="cdot"></span>'+levelReward(n)+'</div>'; }
+      else if(isBeaten){ meta='<div class="lvlName">'+levelDef(n).name+'</div><div class="lvlCoins"><span class="cdot"></span>'+levelReplayReward(n)+'</div>'; }
+      else { meta='<div class="lvlName">'+levelDef(n).name+'</div><div class="lvlCoins"><span class="cdot"></span>'+levelReward(n)+'</div>'; }
       el.innerHTML='<div class="lvlNum">'+n+'</div>'+meta;
       if(!locked){ el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); startLevel(n); }); }
       grid.appendChild(el);
