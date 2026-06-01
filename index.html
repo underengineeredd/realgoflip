@@ -225,6 +225,27 @@
   .howIc { flex:0 0 30px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; color:#05060a; background:#3dff9e; border-radius:8px; box-shadow:0 0 12px rgba(61,255,158,0.4); }
   .howIc.danger { background:#ff5266; box-shadow:0 0 12px rgba(255,82,102,0.5); }
   #howClose { margin-top:14px; font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:1px; padding:14px; border-radius:10px; border:1.5px solid #ff2e88; color:#ff2e88; background:rgba(255,46,136,0.06); cursor:pointer; text-align:center; }
+  #howRate { margin-top:10px; text-align:center; font-size:12px; font-weight:700; color:#ffce3a; cursor:pointer; letter-spacing:1px; }
+
+  /* FEEDBACK POPUP */
+  #fbPanel { position:absolute; inset:0; z-index:16; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(5,6,10,0.78); backdrop-filter:blur(4px); }
+  #fbPanel.show { display:flex; }
+  #fbCard { position:relative; width:100%; max-width:330px; background:#0b0e16; border:1.5px solid rgba(61,255,158,0.4); border-radius:18px; padding:26px 22px 22px; text-align:center; box-shadow:0 0 40px rgba(61,255,158,0.15); animation:rise .4s cubic-bezier(.2,.8,.2,1) both; }
+  #fbClose2 { position:absolute; top:12px; right:14px; font-size:16px; color:#8fa0b4; cursor:pointer; line-height:1; }
+  #fbCard .fbTitle { font-family:'Archivo Black',sans-serif; font-size:21px; color:#fff; }
+  #fbCard .fbSub { font-size:11px; letter-spacing:1px; color:#8fa0b4; margin-top:7px; font-weight:700; }
+  #fbStars { display:flex; justify-content:center; gap:6px; margin-top:16px; }
+  .fbStar { font-size:34px; color:rgba(255,255,255,0.15); cursor:pointer; transition:transform .1s, color .12s; line-height:1; }
+  .fbStar:hover { transform:scale(1.15); }
+  .fbStar.lit { color:#ffce3a; text-shadow:0 0 14px rgba(255,206,58,0.6); }
+  #fbPrompt { font-size:12px; color:#cfd8e3; font-weight:700; margin-top:18px; text-align:left; opacity:0; height:0; overflow:hidden; transition:opacity .2s; }
+  #fbText { width:100%; margin-top:8px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.14); border-radius:10px; color:#fff; font-family:'Space Mono',monospace; font-size:12px; padding:10px; resize:none; opacity:0; height:0; overflow:hidden; transition:opacity .2s; box-sizing:border-box; }
+  #fbText::placeholder { color:#6b7787; }
+  #fbPrompt.show, #fbText.show { opacity:1; height:auto; }
+  #fbText.show { height:auto; min-height:64px; }
+  #fbSend { margin-top:16px; font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:1px; padding:13px; border-radius:10px; border:1.5px solid #3dff9e; color:#05060a; background:#3dff9e; cursor:pointer; opacity:0.4; pointer-events:none; transition:opacity .2s; }
+  #fbSend.ready { opacity:1; pointer-events:auto; box-shadow:0 0 20px rgba(61,255,158,0.4); }
+  #fbThanks { margin-top:14px; font-size:13px; color:#3dff9e; font-weight:700; display:none; }
 
   /* SHOP */
   #shop { position:absolute; inset:0; z-index:11; display:none; flex-direction:column; padding:20px 18px 16px; background:#05060a; overflow:hidden; }
@@ -333,6 +354,7 @@
       </div>
       <div id="btnRow">
         <div class="btn sm" id="modeBtn">NORMAL</div>
+        <div class="btn sm" id="openDaily">DAILY</div>
         <div class="btn sm" id="openShop">SHOP</div>
         <div class="btn sm" id="openMissions">GOALS</div>
         <div class="btn sm" id="openBoard">RANKS</div>
@@ -387,6 +409,26 @@
     <div id="levelsClose">CLOSE</div>
   </div>
 
+  <!-- FEEDBACK -->
+  <div id="fbPanel">
+    <div id="fbCard">
+      <div id="fbClose2">✕</div>
+      <div class="fbTitle">ENJOYING GOFLIP?</div>
+      <div class="fbSub">Tap a star to rate</div>
+      <div id="fbStars">
+        <span class="fbStar" data-v="1">★</span>
+        <span class="fbStar" data-v="2">★</span>
+        <span class="fbStar" data-v="3">★</span>
+        <span class="fbStar" data-v="4">★</span>
+        <span class="fbStar" data-v="5">★</span>
+      </div>
+      <div id="fbPrompt">How could it be better?</div>
+      <textarea id="fbText" placeholder="Optional — what would make it more fun?" rows="3"></textarea>
+      <div id="fbSend">SEND FEEDBACK</div>
+      <div id="fbThanks">Thanks for the feedback! 🙌</div>
+    </div>
+  </div>
+
   <!-- HOW TO PLAY -->
   <div id="howPanel">
     <div class="title2">HOW TO PLAY</div>
@@ -401,6 +443,7 @@
       <div class="howRow"><div class="howIc">★</div><div>Try <b>Levels</b> for hand-built challenges, or <b>Zen</b> mode to practice with no death.</div></div>
     </div>
     <div id="howClose">GOT IT</div>
+    <div id="howRate">★ Rate GOFLIP</div>
   </div>
 
   <!-- MISSIONS -->
@@ -638,7 +681,7 @@
     coins:0, best:0, bestPts:0,
     ownedSkins:['orb','square'], ownedThemes:['classic'], ownedPatterns:['grid'], ownedTrails:['match'], ownedGemskins:['diamond'],
     skin:'orb', theme:'classic', pattern:'grid', trail:'match', gemskin:'diamond',
-    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0,
+    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0, dailyDate:null, dailyBest:0, fbDone:false, fbRating:0, fbRunCount:0,
   }, Store.read()||{});
   // ensure defaults always owned
   ['orb','square'].forEach(s=>{ if(!save.ownedSkins.includes(s)) save.ownedSkins.push(s); });
@@ -664,6 +707,7 @@
   let runCoins=0, runMaxStreak=0, runGems=0, runMaxZone=0;
   let obsPassed=0;       // total obstacles passed this run (drives difficulty now points=gems only)
   let magnetField=0;     // ms of magnet pull remaining
+  let autoField=0;       // ms of auto-pilot remaining
   let coinX2Field=0;     // ms of 2x-coins remaining
   let runBonusCoins=0;   // extra coins accrued from 2x windows
   let nearMissCd=0;      // cooldown so near-miss slowmo doesn't spam
@@ -671,6 +715,7 @@
   let zenMode=false;     // no-death mode
   let zenMissionT=0;     // throttle for live mission updates in zen
   let levelMode=false;   // playing a fixed level
+  let dailyMode=false;   // playing the daily challenge (seeded by date)
   let curLevel=0;        // which level (1-indexed) is being played
   let levelTargetGems=0; // gems needed to clear the current level
   let lastLevel=0;       // the level most recently played (for retry/next on game-over)
@@ -680,7 +725,7 @@
   let lvlSeed=0;
   function lrnd(){ lvlSeed=(lvlSeed*1103515245+12345)>>>0; return lvlSeed/4294967296; }
   // unified random: deterministic during level mode, real otherwise
-  function rng(){ return levelMode ? lrnd() : Math.random(); }
+  function rng(){ return (levelMode||dailyMode) ? lrnd() : Math.random(); }
   const LEVEL_COUNT=12;
   // per-level tuning: difficulty climbs GENTLY. targets are modest so a couple misses
   // don't tank the run, speed ramps slowly, gaps stay fair.
@@ -721,13 +766,13 @@
     3:  { name:'TUNNELS',   design:'grid',    powerups:2, recipe:[['tunnel',4],['plain',2],['double',2],['wide',1]] },
     4:  { name:'WEAVE',     design:'stripes', powerups:2, recipe:[['stagger',4],['drift',3],['double',2],['plain',1]] },
     5:  { name:'SQUEEZE',   design:'hazard',  powerups:2, recipe:[['pinch',4],['drift',2],['double',2],['plain',1]] },
-    6:  { name:'CROSSFIRE', design:'circuit', powerups:2, recipe:[['laser',4],['stagger',2],['drift',2],['double',1]] },
-    7:  { name:'TRIDENT',   design:'rivets',  powerups:3, recipe:[['triple',4],['laser',2],['pinch',2],['tunnel',1]] },
-    8:  { name:'GAUNTLET',  design:'spikes',  powerups:3, recipe:[['laser',3],['triple',3],['stagger',2],['pinch',2]] },
-    9:  { name:'OVERLOAD',  design:'circuit', powerups:3, recipe:[['laser',3],['triple',2],['pinch',2],['stagger',2],['tunnel',1]] },
-    10: { name:'DOUBLECROSS',design:'glow',   powerups:4, recipe:[['doublelaser',3],['triple',3],['laser',2],['stagger',2]] },
-    11: { name:'MELTDOWN',  design:'hazard',  powerups:4, recipe:[['doublelaser',4],['triple',2],['pinch',2],['laser',2]] },
-    12: { name:'SINGULARITY',design:'glow',   powerups:5, recipe:[['doublelaser',4],['triple',3],['laser',3],['stagger',2],['pinch',1]] },
+    6:  { name:'CROSSFIRE', design:'circuit', powerups:2, recipe:[['laser',3],['orbit',2],['stagger',2],['drift',1]] },
+    7:  { name:'TRIDENT',   design:'rivets',  powerups:3, recipe:[['triple',3],['gate',2],['laser',2],['tunnel',1]] },
+    8:  { name:'GAUNTLET',  design:'spikes',  powerups:3, recipe:[['laser',3],['triple',2],['orbit',2],['gate',2]] },
+    9:  { name:'OVERLOAD',  design:'circuit', powerups:3, recipe:[['laser',2],['orbit',2],['gate',2],['stagger',2],['triple',1]] },
+    10: { name:'DOUBLECROSS',design:'glow',   powerups:4, recipe:[['doublelaser',3],['triple',2],['orbit',2],['gate',2]] },
+    11: { name:'MELTDOWN',  design:'hazard',  powerups:4, recipe:[['doublelaser',3],['orbit',2],['gate',2],['laser',2]] },
+    12: { name:'SINGULARITY',design:'glow',   powerups:5, recipe:[['doublelaser',3],['orbit',2],['triple',2],['gate',2],['laser',1]] },
   };
   function levelDef(n){ return LEVEL_DEFS[n] || LEVEL_DEFS[12]; }
   function pickFromRecipe(recipe){
@@ -759,7 +804,7 @@
     return 'plain';
   }
   function gapSpacing(){ const z=diffTier(); const t=Math.min(z*0.04,0.22); return H*(0.62-0.62*t)+player.r*2; }
-  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.5; const start=H*0.44; const sh=Math.min(z*0.04,0.26); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
+  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.6; const start=H*0.45; const sh=Math.min(z*0.04,0.24); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
 
   function makeObstacle(x){
     const type=pickType(); const margin=WALL*H+player.r*1.3; const gemR=GEM_R*H; const passed=obsPassed; const w=Math.max(26,H*0.05);
@@ -816,6 +861,21 @@
       const mo=Math.max(0,g/2-gemR-player.r*0.5);
       return { type:'tunnel', x, w:w*2.6, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.5, gemGot:false };
     }
+    if(type==='orbit'){
+      // a wide gap with a small hazard ball orbiting its center — the safe spot rotates
+      const g=gapHeight()*1.7; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const orbR=g*0.30; // orbit radius
+      const ballR=Math.max(8, player.r*0.9);
+      const mo=Math.max(0,g/2-gemR-player.r*0.5);
+      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.05, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
+    }
+    if(type==='gate'){
+      // gap closes as it approaches (like pinch but nearly shuts) — commit early
+      const target=Math.max(player.r*2*1.7, gapHeight()*0.62); const startG=Math.min(H*0.55, gapHeight()*1.5);
+      const mn=margin+startG/2, mx=H-margin-startG/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const mo=Math.max(0,target/2-gemR-player.r*0.5);
+      return { type:'gate', x, w, gapY:gy, gapH:startG, targetH:target, startH:startG, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.4, gemGot:false };
+    }
     const g=gapHeight(); const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*(mx-mn); const mo=Math.max(0,g/2-gemR-player.r*0.5);
     const realGemY = gy+(rng()*2-1)*mo*gemOffsetFor(passed);
     const ob = { type:'plain', x, w, gapY:gy, gapH:g, passed:false, gemY:realGemY, gemGot:false };
@@ -831,7 +891,7 @@
     const pr=P_R*H;
     player={ x:W*PLAYER_X_FRAC, y:H*0.5, r:pr, vy:0, trail:[], shield:false };
     gravity=1; obstacles=[]; particles=[]; powerups=[]; coinItems=[];
-    streak=0; points=0; scrollX=0; t=0; shake=0; slowmo=0; slowField=0; magnetField=0; coinX2Field=0; runBonusCoins=0; nearMissCd=0; invuln=0; obsPassed=0; runCoins=0; runMaxStreak=0; runGems=0; runMaxZone=0;
+    streak=0; points=0; scrollX=0; t=0; shake=0; slowmo=0; slowField=0; magnetField=0; autoField=0; coinX2Field=0; runBonusCoins=0; nearMissCd=0; invuln=0; obsPassed=0; runCoins=0; runMaxStreak=0; runGems=0; runMaxZone=0;
     curZoneIdx=0; nextPowerupAt=18; spawnX=W+40;
     let sx=W*0.9; for(let i=0;i<3;i++){ sx+=gapSpacing(); obstacles.push(makeObstacle(sx)); } spawnX=sx;
     updateHUD();
@@ -863,15 +923,23 @@
   const startView=document.getElementById('startView'); const goView=document.getElementById('goView');
   const hud=document.getElementById('hud');
   function showStartView(){ goView.classList.remove('show'); startView.classList.remove('gone'); }
-  function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); }
+  function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; dailyMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); }
   function startLevel(n){
-    levelMode=true; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType=''; lvlPowerupsSpawned=0;
+    levelMode=true; dailyMode=false; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType=''; lvlPowerupsSpawned=0;
     lvlSeed=(n*2654435761)>>>0; // deterministic seed per level
     levelsPanel.classList.remove('show');
     reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
     document.body.classList.add('playing'); document.body.classList.add('levels'); document.body.classList.remove('zen');
     applyZoneCSS(0); updateLevelHUD();
     SFX.ui();
+  }
+  function startDaily(){
+    if(document.getElementById('shop').classList.contains('show'))return;
+    dailyMode=true; levelMode=false; lastLevel=0; lastLevelType='';
+    const ds=todayStr(); let s=0; for(const ch of ds) s=(s*31+ch.charCodeAt(0))>>>0; lvlSeed=(s^0x9e3779b9)>>>0;
+    reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
+    document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.remove('zen');
+    applyZoneCSS(0); SFX.ui();
   }
   function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML=levelDef(curLevel).name+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
   function levelWin(){
@@ -918,6 +986,11 @@
     const mult=Math.min(4, 1 + runMaxStreak/20);
     runCoins=Math.round(points*mult)+runBonusCoins; save.coins+=runCoins;
     recordScore(points);
+    if(dailyMode){ // track today's best daily score
+      if(save.dailyDate!==todayStr()){ save.dailyDate=todayStr(); save.dailyBest=0; }
+      if(points>(save.dailyBest||0)) save.dailyBest=points;
+      dailyMode=false;
+    }
     persist();
     document.querySelector('#goView .goLabel').textContent='YOU SCORED';
     document.getElementById('goBig').textContent=points;
@@ -937,6 +1010,7 @@
     document.body.classList.remove('playing');
     document.body.classList.remove('zen');
     overlay.classList.remove('hidden');
+    maybeShowFeedback();
   }
 
   // ============ ZONE VISUALS ============
@@ -968,13 +1042,26 @@
 
   function step(dt){
     const sp=BASE_SPEED*(H/800)*speedMul(); const dx=sp*dt; scrollX+=dx;
-    player.vy+=gravity*G*(H/800)*dt;
+    if(autoField>0){
+      // AUTO-PILOT: steer the dot toward the safe center of the next obstacle
+      autoField=Math.max(0,autoField-dt);
+      let targetY=H/2; const ref=obstacles.find(o=>o.x+o.w>player.x-player.r);
+      if(ref){ if(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'){ // aim at the gap nearest current y
+          let best=1e9; for(const gg of ref.gaps){ const d=Math.abs(gg.y-player.y); if(d<best){best=d;targetY=gg.y;} }
+        } else if(ref.type==='laser'){ const gt=ref.gapY-ref.gapH/2, gb=ref.gapY+ref.gapH/2, mid=ref.gapY; targetY = ref.blockTop ? (mid+gb)/2 : (gt+mid)/2; }
+        else { targetY=ref.gemGot?ref.gapY:(ref.gemY||ref.gapY); }
+      }
+      const diff=targetY-player.y; const desired=Math.max(-1,Math.min(1,diff/(H*0.12)))*VMAX*(H/800);
+      player.vy += (desired-player.vy)*Math.min(1,dt*0.02);
+    } else {
+      player.vy+=gravity*G*(H/800)*dt;
+    }
     const vcap=VMAX*(H/800); if(player.vy>vcap)player.vy=vcap; if(player.vy<-vcap)player.vy=-vcap;
     player.y+=player.vy*dt;
     player.trail.push({x:player.x,y:player.y}); if(player.trail.length>14)player.trail.shift();
     const top=WALL*H+player.r, bot=H-WALL*H-player.r;
-    if(player.y<=top){ player.y=top; if(state==='play'&&invuln<=0){ if(zenMode){ player.vy=Math.abs(player.vy)*0.5+0.05; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; player.vy=Math.abs(player.vy)*0.4+0.06; } else { die(); return; } } }
-    if(player.y>=bot){ player.y=bot; if(state==='play'&&invuln<=0){ if(zenMode){ player.vy=-Math.abs(player.vy)*0.5-0.05; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; player.vy=-Math.abs(player.vy)*0.4-0.06; } else { die(); return; } } }
+    if(player.y<=top){ player.y=top; if(state==='play'&&invuln<=0&&autoField<=0){ if(zenMode){ player.vy=Math.abs(player.vy)*0.5+0.05; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; player.vy=Math.abs(player.vy)*0.4+0.06; } else { die(); return; } } else if(player.y<=top){ player.vy=Math.abs(player.vy)*0.3; } }
+    if(player.y>=bot){ player.y=bot; if(state==='play'&&invuln<=0&&autoField<=0){ if(zenMode){ player.vy=-Math.abs(player.vy)*0.5-0.05; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; player.vy=-Math.abs(player.vy)*0.4-0.06; } else { die(); return; } } else if(player.y>=bot){ player.vy=-Math.abs(player.vy)*0.3; } }
 
     for(const o of obstacles){ o.x-=dx;
       if(o.type==='drift'){ o.phase+=dt*0.0016; o.gapY=Math.max(o.minC,Math.min(o.maxC,o.baseY+Math.sin(o.phase)*o.driftAmp*o.driftDir)); o.gemY=o.gapY+o.gemGotDY; }
@@ -982,6 +1069,11 @@
         const dist=o.x-player.x; const range=W*0.85; const tprog=Math.max(0,Math.min(1,1-dist/range)); // 0 far -> 1 at player
         o.gapH = o.startH + (o.targetH-o.startH)*tprog;
       }
+      else if(o.type==='gate'){ // closes faster & nearly shut at the player
+        const dist=o.x-player.x; const range=W*0.7; const tprog=Math.max(0,Math.min(1,1-dist/range));
+        o.gapH = o.startH + (o.targetH-o.startH)*Math.min(1,tprog*1.3);
+      }
+      else if(o.type==='orbit'){ o.ang += o.spin*dt; }
       else if(o.type==='laser'){
         // warn while approaching the switch point, then flip the blocked half once
         o.warning = (!o.switched && o.x <= o.switchX + W*0.34 && o.x > o.switchX) || (o.switch2!==undefined && o.switched && !o.switch2 && o.x <= o.switch2X + W*0.34 && o.x > o.switch2X);
@@ -1003,28 +1095,30 @@
         const ref=obstacles.find(o=>o.x>player.x+player.r);
         let py=ref?(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'?ref.gaps[0].y:ref.gapY):H*0.5;
         // no 2x-coins in levels (fixed reward) — only useful gameplay powerups
-        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','slow'] : ['slow','shield','magnet','shield'];
+        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','auto','slow'] : ['slow','shield','magnet','auto','shield'];
         const kind=kinds[Math.floor(rng()*kinds.length)];
         powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind});
         lvlPowerupsSpawned++;
       }
-    } else if(points>=nextPowerupAt && rng()<0.5){ const ref=obstacles.find(o=>o.x>player.x+player.r); let py=ref?(ref.type==='double'?ref.gaps[0].y:ref.gapY):H*0.5; const kinds=['slow','shield','magnet','coins']; const kind=kinds[Math.floor(rng()*kinds.length)]; powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind}); nextPowerupAt=points+22+Math.floor(rng()*16); }
+    } else if(points>=nextPowerupAt && rng()<0.5){ const ref=obstacles.find(o=>o.x>player.x+player.r); let py=ref?(ref.type==='double'?ref.gaps[0].y:ref.gapY):H*0.5; const kinds=['slow','shield','magnet','auto','coins']; const kind=kinds[Math.floor(rng()*kinds.length)]; powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind}); nextPowerupAt=points+22+Math.floor(rng()*16); }
 
     const gemR=GEM_R*H; const passedSoFar=obsPassed; const grabBonus=grabBonusFor(passedSoFar)*gemR;
 
     for(const p of powerups){ if(p.got)continue; p.bob+=dt*0.004;
       if(Math.hypot(player.x-p.x,player.y-p.y)<p.r+player.r){
         p.got=true; SFX.power();
-        const tint = p.kind==='slow'?'#7fefff':p.kind==='shield'?'#9dff8b':p.kind==='magnet'?'#ff8be0':'#ffd54a';
+        const tint = p.kind==='slow'?'#7fefff':p.kind==='shield'?'#9dff8b':p.kind==='magnet'?'#ff8be0':p.kind==='auto'?'#c8a2ff':'#ffd54a';
         if(p.kind==='slow'){ slowField=3000; showToast('POWER-UP','SLOW-MO'); }
         else if(p.kind==='shield'){ player.shield=true; showToast('POWER-UP','SHIELD'); }
         else if(p.kind==='magnet'){ magnetField=4000; showToast('POWER-UP','MAGNET'); }
+        else if(p.kind==='auto'){ autoField=2500; showToast('POWER-UP','AUTO-PILOT'); }
         else { coinX2Field=6000; showToast('POWER-UP','2× COINS'); }
         for(let i=0;i<14;i++){ const a=Math.random()*6.28,s=Math.random()*0.25+0.05; particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:420,max:420,r:p.r*0.2,tint}); }
       }
     }
     powerups=powerups.filter(p=>!p.got && p.x>-40);
     if(magnetField>0) magnetField=Math.max(0,magnetField-dt);
+    if(autoField>0){ /* decremented in step() */ }
     if(coinX2Field>0) coinX2Field=Math.max(0,coinX2Field-dt);
 
     for(const o of obstacles){
@@ -1054,7 +1148,9 @@
           const bt = o.blockTop ? gt : mid, bb = o.blockTop ? mid : gb;
           if(player.y+player.r>bt && player.y-player.r<bb) hit=true;
         }
-        if(hit && state==='play' && invuln<=0){ if(zenMode){ player.vy=(player.y<H/2?1:-1)*VMAX*(H/800)*0.5; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; } else { die(); return; } }
+        // orbit: the orbiting ball is deadly (gap edges already handled by barsFor)
+        if(!hit && o.type==='orbit'){ const bx=o.x+o.w/2+Math.cos(o.ang)*o.orbR, by=o.gapY+Math.sin(o.ang)*o.orbR; if(Math.hypot(player.x-bx,player.y-by)<o.ballR+player.r) hit=true; }
+        if(hit && state==='play' && invuln<=0 && autoField<=0){ if(zenMode){ player.vy=(player.y<H/2?1:-1)*VMAX*(H/800)*0.5; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; } else { die(); return; } }
       }
     }
     while(obstacles.length && obstacles[0].x+obstacles[0].w<-10) obstacles.shift();
@@ -1208,10 +1304,16 @@
     if(o.type==='pinch'){ ctx.fillStyle=z.accent; ctx.globalAlpha=0.5; ctx.font='bold 13px Space Mono'; ctx.textAlign='center'; ctx.fillText('»«',o.x+o.w/2,o.gapY+5); ctx.globalAlpha=1; ctx.textAlign='start'; }
     if(o.type==='stagger'){ ctx.fillStyle=z.accent; ctx.globalAlpha=0.45; ctx.font='bold 12px Space Mono'; ctx.textAlign='center'; for(const gg of o.gaps){ ctx.fillText('≈',o.x+o.w/2,gg.y+4); } ctx.globalAlpha=1; ctx.textAlign='start'; }
     if(o.type==='tunnel'){ ctx.strokeStyle=z.accent; ctx.globalAlpha=0.3; ctx.lineWidth=1.5; ctx.setLineDash([4,5]); const gt=o.gapY-o.gapH/2,gb=o.gapY+o.gapH/2; ctx.beginPath(); ctx.moveTo(o.x,gt); ctx.lineTo(o.x+o.w,gt); ctx.moveTo(o.x,gb); ctx.lineTo(o.x+o.w,gb); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; }
+    if(o.type==='gate'){ ctx.fillStyle=z.accent; ctx.globalAlpha=0.5; ctx.font='bold 13px Space Mono'; ctx.textAlign='center'; ctx.fillText('▼▲',o.x+o.w/2,o.gapY+5); ctx.globalAlpha=1; ctx.textAlign='start'; }
+    if(o.type==='orbit'){ const cx=o.x+o.w/2, bx=cx+Math.cos(o.ang)*o.orbR, by=o.gapY+Math.sin(o.ang)*o.orbR;
+      // faint orbit path
+      ctx.strokeStyle=hexA(z.accent,0.2); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,o.gapY,o.orbR,0,6.2832); ctx.stroke();
+      // the hazard ball (red, glowing)
+      ctx.save(); ctx.shadowColor='#ff5266'; ctx.shadowBlur=12; ctx.fillStyle='#ff5266'; ctx.beginPath(); ctx.arc(bx,by,o.ballR,0,6.2832); ctx.fill(); ctx.fillStyle='#ffd9de'; ctx.beginPath(); ctx.arc(bx,by,o.ballR*0.4,0,6.2832); ctx.fill(); ctx.restore(); }
     if(!o.gemGot){ const gx=o.x+o.w/2, gr=GEM_R*H; const pr=gr*(1+0.12*Math.sin(scrollX*0.02+(o.gapY||0))); drawGem(gx,o.gemY,pr,z.accent,z.bgB); }
     // fake decoy gem: hollow grey diamond with an ✕, clearly different from the real glowing accent gem
   }
-  function drawPowerup(p){ const x=p.x,y=p.y+Math.sin(p.bob)*4; const col=p.kind==='slow'?'#7fefff':p.kind==='shield'?'#9dff8b':p.kind==='magnet'?'#ff8be0':'#ffd54a';
+  function drawPowerup(p){ const x=p.x,y=p.y+Math.sin(p.bob)*4; const col=p.kind==='slow'?'#7fefff':p.kind==='shield'?'#9dff8b':p.kind==='magnet'?'#ff8be0':p.kind==='auto'?'#c8a2ff':'#ffd54a';
     ctx.save(); ctx.translate(x,y); ctx.shadowColor=col; ctx.shadowBlur=18; ctx.globalAlpha=0.18; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,p.r,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
     ctx.shadowBlur=10; ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,p.r*0.72,0,6.2832); ctx.stroke(); ctx.shadowBlur=0; ctx.lineWidth=2; ctx.strokeStyle='#fff';
     if(p.kind==='slow'){ // clock hands
@@ -1220,6 +1322,9 @@
       ctx.beginPath(); ctx.moveTo(0,-p.r*0.5); ctx.lineTo(p.r*0.4,-p.r*0.25); ctx.lineTo(p.r*0.4,p.r*0.15); ctx.lineTo(0,p.r*0.5); ctx.lineTo(-p.r*0.4,p.r*0.15); ctx.lineTo(-p.r*0.4,-p.r*0.25); ctx.closePath(); ctx.stroke();
     } else if(p.kind==='magnet'){ // magnet: U shape
       ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,-p.r*0.05,p.r*0.34,Math.PI,0,false); ctx.moveTo(-p.r*0.34,-p.r*0.05); ctx.lineTo(-p.r*0.34,p.r*0.38); ctx.moveTo(p.r*0.34,-p.r*0.05); ctx.lineTo(p.r*0.34,p.r*0.38); ctx.stroke();
+    } else if(p.kind==='auto'){ // auto-pilot: crosshair/target
+      ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,p.r*0.34,0,6.2832); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-p.r*0.52); ctx.lineTo(0,-p.r*0.28); ctx.moveTo(0,p.r*0.52); ctx.lineTo(0,p.r*0.28); ctx.moveTo(-p.r*0.52,0); ctx.lineTo(-p.r*0.28,0); ctx.moveTo(p.r*0.52,0); ctx.lineTo(p.r*0.28,0); ctx.stroke();
     } else { // 2x coins: "×2"
       ctx.fillStyle='#fff'; ctx.font='bold '+(p.r*0.85)+'px Archivo Black, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('×2',0,1); ctx.textAlign='start'; ctx.textBaseline='alphabetic';
     }
@@ -1616,6 +1721,7 @@
   function openLevels(){ renderLevels(); levelsPanel.classList.add('show'); }
   document.getElementById('openLevels').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); SFX.ui(); openLevels(); });
   document.getElementById('playBtn').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); SFX.init(); SFX.resume(); SFX.ui(); startGame(); });
+  document.getElementById('openDaily').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); SFX.init(); SFX.resume(); startDaily(); });
   document.getElementById('levelsClose').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); levelsPanel.classList.remove('show'); });
 
   // ============ CHALLENGE LINKS ("beat my score") ============
@@ -1638,6 +1744,48 @@
   const howPanel=document.getElementById('howPanel');
   document.getElementById('openHow').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); SFX.ui(); howPanel.classList.add('show'); });
   document.getElementById('howClose').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); howPanel.classList.remove('show'); });
+  document.getElementById('howRate').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); howPanel.classList.remove('show'); save.fbDone=false; openFeedback(); });
+
+  // ============ FEEDBACK POPUP (Google Form) ============
+  const FB_FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSdCEjLxRRuznXDffEx-FAPDMxFASnCbmAtVWopiluh2TYO2eQ/viewform';
+  const FB_RATING_ENTRY = 'entry.409407785';   // Rating question
+  const FB_COMMENT_ENTRY = 'entry.1391257231'; // Comment question
+  const fbPanel=document.getElementById('fbPanel');
+  let fbRating=0;
+  const fbStars=[...document.querySelectorAll('.fbStar')];
+  function paintStars(v){ fbStars.forEach(s=>s.classList.toggle('lit', parseInt(s.dataset.v,10)<=v)); }
+  fbStars.forEach(s=>{
+    s.addEventListener('pointerenter',()=>paintStars(parseInt(s.dataset.v,10)));
+    s.addEventListener('pointerleave',()=>paintStars(fbRating));
+    s.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); fbRating=parseInt(s.dataset.v,10); paintStars(fbRating); SFX.ui();
+      document.getElementById('fbPrompt').classList.add('show');
+      document.getElementById('fbText').classList.add('show');
+      document.getElementById('fbSend').classList.add('ready');
+    });
+  });
+  function openFeedback(){ fbRating=0; paintStars(0); document.getElementById('fbText').value=''; document.getElementById('fbText').classList.remove('show'); document.getElementById('fbPrompt').classList.remove('show'); document.getElementById('fbSend').classList.remove('ready'); document.getElementById('fbThanks').style.display='none'; document.getElementById('fbSend').style.display=''; fbPanel.classList.add('show'); }
+  function closeFeedback(){ fbPanel.classList.remove('show'); save.fbDone=true; persist(); }
+  document.getElementById('fbClose2').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); closeFeedback(); });
+  document.getElementById('fbSend').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); if(!fbRating)return;
+    const comment=document.getElementById('fbText').value.slice(0,500);
+    save.fbDone=true; save.fbRating=fbRating; persist();
+    // open the prefilled Google Form (if configured)
+    if(!FB_FORM_BASE.includes('REPLACE')){
+      const url=FB_FORM_BASE+'?usp=pp_url&'+FB_RATING_ENTRY+'='+encodeURIComponent(fbRating)+'&'+FB_COMMENT_ENTRY+'='+encodeURIComponent(comment);
+      window.open(url,'_blank');
+    }
+    SFX.power();
+    document.getElementById('fbSend').style.display='none';
+    document.getElementById('fbThanks').style.display='block';
+    setTimeout(()=>fbPanel.classList.remove('show'), 1400);
+  });
+  // show once, automatically, after the player has died a few times (engaged but not nagged)
+  function maybeShowFeedback(){
+    if(save.fbDone) return false;
+    const runs=(save.fbRunCount||0)+1; save.fbRunCount=runs; persist();
+    if(runs===4){ setTimeout(openFeedback, 700); return true; } // after the 4th game over
+    return false;
+  }
 
   // mute toggle
   const muteBtn=document.getElementById('muteBtn');
