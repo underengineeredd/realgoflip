@@ -876,12 +876,13 @@
       return { type:'tunnel', x, w:w*2.6, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.5, gemGot:false };
     }
     if(type==='orbit'){
-      // a wide gap with a small hazard ball orbiting its center — the safe spot rotates
-      const g=gapHeight()*1.7; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
-      const orbR=g*0.30; // orbit radius
-      const ballR=Math.max(8, player.r*0.9);
+      // a tight gap with a hazard ball orbiting inside it. the ball sweeps across the
+      // opening; when it's at one edge you thread the other side, so you time your pass.
+      const g=Math.max(player.r*2*2.3, gapHeight()*0.5); const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const ballR=Math.max(10, player.r*0.85);
+      const orbR=Math.max(ballR*0.8, g*0.5 - ballR*1.1); // ball swings toward each edge of the tight gap
       const mo=Math.max(0,g/2-gemR-player.r*0.5);
-      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.05, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
+      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.012, passed:false, gemY:gy, gemGot:false };
     }
     if(type==='gate'){
       // gap closes as it approaches (like pinch but nearly shuts) — commit early
@@ -1062,7 +1063,14 @@
     const sp=BASE_SPEED*(H/800)*speedMul(); const dx=sp*dt; scrollX+=dx;
     if(autoField>0){
       // AUTO-PILOT: steer the dot toward the safe center of the next obstacle
+      const before=autoField;
       autoField=Math.max(0,autoField-dt);
+      if(before>600 && autoField<=600){ SFX.ui(); } // soft "about to end" tick at ~600ms left
+      if(autoField===0){ // control just returned to the player — make it unmistakable
+        announceControl(); SFX.zone();
+        // hand back with a gentle nudge in the current direction so it doesn't feel like a dead stop
+        player.vy *= 0.5;
+      }
       let targetY=H/2; const ref=obstacles.find(o=>o.x+o.w>player.x-player.r);
       if(ref){ if(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'){ // aim at the gap nearest current y
           let best=1e9; for(const gg of ref.gaps){ const d=Math.abs(gg.y-player.y); if(d<best){best=d;targetY=gg.y;} }
@@ -1189,6 +1197,11 @@
     const txt=phrases[key]||'ZONE '+(Math.floor(s/10)+1);
     const el=document.getElementById('combo'); el.textContent=txt; el.style.color=ZN(curZoneIdx).accent;
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  }
+  function announceControl(){ // auto-pilot ended — tell the player they're flying again
+    const el=document.getElementById('combo'); el.textContent='YOU\u2019RE IN CONTROL'; el.style.color='#c8a2ff';
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+    shake=Math.max(shake,6);
   }
   function triggerSlowmoVignette(){ const sm=document.getElementById('slowmo'); sm.classList.remove('show'); void sm.offsetWidth; sm.classList.add('show'); }
   function die(){ SFX.die(); deathEffect('burst', player.x, player.y); shake=18; gameOver(); }
@@ -1371,6 +1384,14 @@
     }
     // shield ring (drawn on top so it reads as protection)
     if(player.shield){ ctx.save(); ctx.strokeStyle='#9dff8b'; ctx.shadowColor='#9dff8b'; ctx.shadowBlur=12; ctx.globalAlpha=0.85; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(player.x,player.y,player.r*1.5,0,6.2832); ctx.stroke(); ctx.globalAlpha=0.25; ctx.lineWidth=6; ctx.beginPath(); ctx.arc(player.x,player.y,player.r*1.5,0,6.2832); ctx.stroke(); ctx.restore(); }
+    // auto-pilot ring: rotating crosshair; flashes urgently in the final 600ms before control returns
+    if(autoField>0){ ctx.save(); const ending=autoField<=600; const rr=player.r*1.7;
+      const fl = ending ? (0.4+0.6*Math.abs(Math.sin(t*0.04))) : 0.85; // rapid flash when about to end
+      ctx.strokeStyle='#c8a2ff'; ctx.shadowColor='#c8a2ff'; ctx.shadowBlur=ending?14:10; ctx.globalAlpha=fl; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(player.x,player.y,rr,0,6.2832); ctx.stroke();
+      // rotating crosshair ticks
+      const rot=t*0.004; for(let i=0;i<4;i++){ const a=rot+i*Math.PI/2; ctx.beginPath(); ctx.moveTo(player.x+Math.cos(a)*rr*0.8,player.y+Math.sin(a)*rr*0.8); ctx.lineTo(player.x+Math.cos(a)*rr*1.25,player.y+Math.sin(a)*rr*1.25); ctx.stroke(); }
+      ctx.restore(); }
     ctx.restore();
   }
 
