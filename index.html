@@ -478,6 +478,9 @@
 (() => {
   const cv=document.getElementById('c'); let ctx=cv.getContext('2d'); const wrap=document.getElementById('wrap');
 
+  // safe analytics event helper — never throws if gtag is blocked/absent
+  function track(name, params){ try{ if(typeof gtag==='function') gtag('event', name, params||{}); }catch(e){} }
+
   // ============ SOUND (Web Audio, synthesized — no files) ============
   const SFX = (() => {
     let ac=null, master=null, muted=false;
@@ -924,7 +927,7 @@
   const startView=document.getElementById('startView'); const goView=document.getElementById('goView');
   const hud=document.getElementById('hud');
   function showStartView(){ goView.classList.remove('show'); startView.classList.remove('gone'); }
-  function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; dailyMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); }
+  function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; dailyMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); track('game_start',{mode: zenMode?'zen':'normal'}); }
   function startLevel(n){
     levelMode=true; dailyMode=false; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType=''; lvlPowerupsSpawned=0;
     lvlSeed=(n*2654435761)>>>0; // deterministic seed per level
@@ -932,7 +935,7 @@
     reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
     document.body.classList.add('playing'); document.body.classList.add('levels'); document.body.classList.remove('zen');
     applyZoneCSS(0); updateLevelHUD();
-    SFX.ui();
+    SFX.ui(); track('level_start',{level:n, level_name:levelDef(n).name});
   }
   function startDaily(){
     if(document.getElementById('shop').classList.contains('show'))return;
@@ -940,12 +943,13 @@
     const ds=todayStr(); let s=0; for(const ch of ds) s=(s*31+ch.charCodeAt(0))>>>0; lvlSeed=(s^0x9e3779b9)>>>0;
     reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
     document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.remove('zen');
-    applyZoneCSS(0); SFX.ui();
+    applyZoneCSS(0); SFX.ui(); track('daily_start',{date:todayStr()});
   }
   function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML=levelDef(curLevel).name+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
   function levelWin(){
     state='dead'; t=0; levelMode=false; lastLevel=curLevel; lastLevelWon=true;
     const firstClear = curLevel>(save.levelsBeaten||0);
+    track('level_complete',{level:curLevel, level_name:levelDef(curLevel).name, first_clear:firstClear});
     if(firstClear){ save.levelsBeaten=curLevel; }
     // FIXED reward: big bonus on first clear, small reward on replays
     runCoins = firstClear ? levelReward(curLevel) : levelReplayReward(curLevel);
@@ -966,6 +970,7 @@
     if(levelMode){ // failed the level (died before hitting target)
       state='dead'; t=0;
       const reached=points; levelMode=false; lastLevel=curLevel; lastLevelWon=false;
+      track('level_fail',{level:curLevel, level_name:levelDef(curLevel).name, reached:reached, target:levelTargetGems});
       document.getElementById('goBig').textContent=reached;
       document.getElementById('goStreak').textContent=runMaxStreak;
       document.getElementById('goBest').textContent=save.best;
@@ -987,6 +992,7 @@
     const mult=Math.min(4, 1 + runMaxStreak/20);
     runCoins=Math.round(points*mult)+runBonusCoins; save.coins+=runCoins;
     recordScore(points);
+    track('game_over',{score:points, max_streak:runMaxStreak, was_daily:dailyMode, score_bucket: points<5?'0-4':points<15?'5-14':points<30?'15-29':points<60?'30-59':'60+'});
     if(dailyMode){ // track today's best daily score
       if(save.dailyDate!==todayStr()){ save.dailyDate=todayStr(); save.dailyBest=0; }
       if(points>(save.dailyBest||0)) save.dailyBest=points;
@@ -1484,7 +1490,7 @@
   document.getElementById('shopClose').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); shop.classList.remove('show'); });
   document.querySelectorAll('.tab').forEach(tb=>{ tb.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); shopTab=tb.dataset.tab; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===tb)); renderShop(); }); });
 
-  function openShop(){ shop.classList.add('show'); renderShop(); }
+  function openShop(){ shop.classList.add('show'); renderShop(); track('shop_open'); }
 
   function renderShop(){
     document.getElementById('shopCoinsVal').textContent=save.coins;
@@ -1525,7 +1531,7 @@
     persist(); updateHUD(); renderShop();
   }
   function ownList(kind){ return kind==='skin'?save.ownedSkins:kind==='theme'?save.ownedThemes:kind==='trail'?save.ownedTrails:kind==='gem'?save.ownedGemskins:save.ownedPatterns; }
-  function ownAndEquip(kind,id){ const l=ownList(kind); if(!l.includes(id)) l.push(id); equip(kind,id); showToast('PURCHASED', (kind==='skin'?'DOT':kind).toUpperCase()); }
+  function ownAndEquip(kind,id){ const l=ownList(kind); if(!l.includes(id)) l.push(id); equip(kind,id); track('purchase',{item_type:kind, item_id:id}); showToast('PURCHASED', (kind==='skin'?'DOT':kind).toUpperCase()); }
   function equip(kind,id){ if(kind==='skin')save.skin=id; else if(kind==='theme'){ save.theme=id; applyZoneCSS(curZoneIdx); } else if(kind==='trail')save.trail=id; else if(kind==='gem')save.gemskin=id; else save.pattern=id; }
 
   // mini previews
@@ -1772,6 +1778,7 @@
   document.getElementById('fbSend').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); if(!fbRating)return;
     const comment=document.getElementById('fbText').value.slice(0,500);
     save.fbDone=true; save.fbRating=fbRating; persist();
+    track('feedback_submit',{rating:fbRating, has_comment: comment.length>0});
     // open the prefilled Google Form (if configured)
     if(!FB_FORM_BASE.includes('REPLACE')){
       const url=FB_FORM_BASE+'?usp=pp_url&'+FB_RATING_ENTRY+'='+encodeURIComponent(fbRating)+'&'+FB_COMMENT_ENTRY+'='+encodeURIComponent(comment);
