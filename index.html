@@ -876,13 +876,13 @@
       return { type:'tunnel', x, w:w*2.6, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.5, gemGot:false };
     }
     if(type==='orbit'){
-      // a tight gap with a hazard ball orbiting inside it. the ball sweeps across the
-      // opening; when it's at one edge you thread the other side, so you time your pass.
-      const g=Math.max(player.r*2*2.3, gapHeight()*0.5); const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
-      const ballR=Math.max(10, player.r*0.85);
-      const orbR=Math.max(ballR*0.8, g*0.5 - ballR*1.1); // ball swings toward each edge of the tight gap
+      // a wide gap with a hazard ball orbiting its center — the safe spot rotates.
+      // big readable circle (as before); spin is slow so you can time your pass.
+      const g=gapHeight()*1.7; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const orbR=g*0.30; // orbit radius
+      const ballR=Math.max(8, player.r*0.9);
       const mo=Math.max(0,g/2-gemR-player.r*0.5);
-      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.012, passed:false, gemY:gy, gemGot:false };
+      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.012, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
     }
     if(type==='gate'){
       // gap closes as it approaches (like pinch but nearly shuts) — commit early
