@@ -882,7 +882,7 @@
       const orbR=g*0.30; // orbit radius
       const ballR=Math.max(8, player.r*0.9);
       const mo=Math.max(0,g/2-gemR-player.r*0.5);
-      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.012, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
+      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.009, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
     }
     if(type==='gate'){
       // gap closes as it approaches (like pinch but nearly shuts) — commit early
