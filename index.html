@@ -23,7 +23,8 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
 
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  ::selection { background:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#0a0d12; }
   /* cursor hidden ONLY while actively playing */
   body.playing, body.playing #wrap { cursor:none; }
@@ -137,6 +138,15 @@
   /* ---- game over view ---- */
   #goScoreWrap { animation:rise .45s cubic-bezier(.2,.8,.2,1) both; }
   .goLabel { font-size:12px; letter-spacing:6px; font-weight:700; color:var(--hot); text-shadow:0 0 12px rgba(255,46,136,0.6); }
+  #goStars { display:none; flex-direction:column; align-items:center; gap:5px; margin:8px 0 2px; }
+  #goStars.show { display:flex; }
+  #goStars .starRow { display:flex; gap:10px; }
+  #goStars .starRow .st { font-size:36px; line-height:1; color:rgba(255,255,255,0.15); }
+  #goStars .starRow .st.on { color:#ffce3a; text-shadow:0 0 18px rgba(255,206,58,0.9); }
+  #goStars.show .starRow .st.on { animation:starPop .5s cubic-bezier(.2,1.4,.5,1) backwards; }
+  #goStars .starRow .st:nth-child(1){ animation-delay:.05s } #goStars .starRow .st:nth-child(2){ animation-delay:.2s } #goStars .starRow .st:nth-child(3){ animation-delay:.35s }
+  #goStars .starCap { font-size:10px; letter-spacing:2px; font-weight:700; color:#9fb0c4; }
+  @keyframes starPop { 0%{transform:scale(0.2);opacity:0} 60%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
   #goBig { font-family:'Archivo Black',sans-serif; font-size:104px; line-height:0.82; color:#fff; margin-top:6px; text-shadow:0 0 10px rgba(255,255,255,0.4), 0 0 46px var(--neon); }
   #coinEarned { margin-top:10px; font-size:15px; color:var(--warm); font-weight:800; letter-spacing:1px; opacity:0; text-shadow:0 0 12px rgba(255,206,58,0.5); }
   #coinEarned.show { opacity:1; animation:cpop .5s ease; }
@@ -208,7 +218,9 @@
   .lvl.locked::after { content:'🔒'; position:absolute; font-size:13px; bottom:8px; }
   .lvl.beaten { border-color:#3dff9e; box-shadow:0 0 14px rgba(61,255,158,0.2); }
   .lvl.beaten .lvlNum { color:#3dff9e; }
-  .lvl.beaten::before { content:'★'; position:absolute; top:6px; right:8px; font-size:11px; color:#ffce3a; }
+  .lvl .lvlStars { position:absolute; top:5px; left:0; right:0; display:flex; justify-content:center; gap:2px; font-size:9px; line-height:1; pointer-events:none; }
+  .lvl .lvlStars .s { color:rgba(255,255,255,0.16); }
+  .lvl .lvlStars .s.on { color:#ffce3a; text-shadow:0 0 5px rgba(255,206,58,0.7); }
   .lvl.next { border-color:#ff2e88; box-shadow:0 0 16px rgba(255,46,136,0.3); }
   .lvl.next .lvlNum { color:#ff2e88; }
   #levelsClose { margin-top:14px; font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:1px; padding:14px; border-radius:10px; border:1.5px solid #3dff9e; color:#3dff9e; background:rgba(61,255,158,0.06); cursor:pointer; text-align:center; }
@@ -375,6 +387,7 @@
         <div id="goBig">0</div>
         <div id="coinEarned">+0 COINS</div>
       </div>
+      <div id="goStars"><div class="starRow"><span class="st">★</span><span class="st">★</span><span class="st">★</span></div><div class="starCap">0 / 0 GEMS</div></div>
       <div id="goGrid">
         <div class="goCard"><div class="gcK">STREAK</div><div class="gcV accent" id="goStreak">0</div></div>
         <div class="goCard"><div class="gcK">BEST SCORE</div><div class="gcV" id="goBestPts">0</div></div>
@@ -447,7 +460,7 @@
       <div class="howRow"><div class="howIc">⟳</div><div><b>Tap anywhere</b> to flip gravity. Your dot flies up or down — that's the only control.</div></div>
       <div class="howRow"><div class="howIc">◆</div><div>Fly through the <b>gaps</b> and grab the glowing <b>gems</b>. Each gem = <b>1 point</b>.</div></div>
       <div class="howRow"><div class="howIc">✦</div><div>Grab gems back-to-back to build a <b>streak</b>. Miss one and the streak resets.</div></div>
-      <div class="howRow"><div class="howIc">⬡</div><div>Every <b>10 streak</b> enters a new <b>zone</b> — colors shift and your coin multiplier climbs.</div></div>
+      <div class="howRow"><div class="howIc">⬡</div><div>Each <b>gem</b> raises your coin <b>multiplier</b> (up to ×4) — and it never drops. Long <b>streaks</b> shift the zone colors.</div></div>
       <div class="howRow"><div class="howIc">⚡</div><div>Grab <b>power-ups</b>: slow-mo, shield (one free hit), magnet, and 2× coins.</div></div>
       <div class="howRow"><div class="howIc danger">▰</div><div><b>Lasers</b> block half the gap, then <b>switch sides</b> — watch the orange warning and flip to safety.</div></div>
       <div class="howRow"><div class="howIc">$</div><div>Points become <b>coins</b> at game over. Spend them in the <b>shop</b> on skins, trails, themes & more.</div></div>
@@ -695,7 +708,7 @@
     coins:0, best:0, bestPts:0,
     ownedSkins:['orb','square'], ownedThemes:['classic'], ownedPatterns:['grid'], ownedTrails:['match'], ownedGemskins:['diamond'],
     skin:'orb', theme:'classic', pattern:'grid', trail:'match', gemskin:'diamond',
-    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0, dailyDate:null, dailyBest:0, fbDone:false, fbShown:false, fbRating:0, fbRunCount:0,
+    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0, levelStars:{}, dailyDate:null, dailyBest:0, fbDone:false, fbShown:false, fbRating:0, fbRunCount:0,
   }, Store.read()||{});
   // ensure defaults always owned
   ['orb','square'].forEach(s=>{ if(!save.ownedSkins.includes(s)) save.ownedSkins.push(s); });
@@ -707,6 +720,7 @@
   if(!save.ownedGemskins) save.ownedGemskins=['diamond'];
   if(!save.ownedGemskins.includes('diamond')) save.ownedGemskins.push('diamond');
   if(!save.gemskin) save.gemskin='diamond';
+  if(!save.levelStars || typeof save.levelStars!=='object') save.levelStars={};
   function persist(){ Store.write(save); }
   persist(); // lock in any migration right away
 
@@ -717,6 +731,7 @@
   let state='start';
   const PLAYER_X_FRAC=0.30;
   let player,gravity,obstacles,particles,coinItems,streak,points,scrollX,spawnX,t,shake,slowmo;
+  let timeScale=1;       // smoothed game-time multiplier so slow-mo eases in/out (no jarring snap)
   let curZoneIdx=0, slowField=0, powerups, nextPowerupAt;
   let runCoins=0, runMaxStreak=0, runGems=0, runMaxZone=0;
   let obsPassed=0;       // total obstacles passed this run (drives difficulty now points=gems only)
@@ -740,15 +755,14 @@
   function lrnd(){ lvlSeed=(lvlSeed*1103515245+12345)>>>0; return lvlSeed/4294967296; }
   // unified random: deterministic during level mode, real otherwise
   function rng(){ return (levelMode||dailyMode) ? lrnd() : Math.random(); }
-  const LEVEL_COUNT=12;
+  const LEVEL_COUNT=15;
   // per-level tuning: difficulty climbs GENTLY. targets are modest so a couple misses
   // don't tank the run, speed ramps slowly, gaps stay fair.
   function levelParams(n){
     const f=(n-1)/(LEVEL_COUNT-1); // 0..1
     return {
-      speed: 0.82 + f*0.46,         // scroll speed multiplier (0.82x -> 1.28x) — gentler top end
-      gap:   1.18 - f*0.24,         // gap size multiplier (very roomy -> moderately tight, never brutal)
-      target: 6 + Math.round((n-1)*1.7), // gems to clear: 6,8,9,11,13,14,16,18,19,21,23,25 — much lower
+      speed: 0.80 + f*0.32,         // scroll speed multiplier (0.80x -> 1.12x) — slower, easier
+      gap:   1.28 - f*0.22,         // gap size multiplier (very roomy -> still generous, never brutal)
       unlockAdv: n,
     };
   }
@@ -774,59 +788,153 @@
   // each level is its own world: a NAME, a unique obstacle DESIGN (pattern on the pipes),
   // a hand-authored obstacle mix (personality), and a guaranteed number of powerups.
   // difficulty introduced gently; new obstacle types (stagger, tunnel) add variety.
-  const LEVEL_DEFS = {
-    1:  { name:'WARMUP',    design:'plain',   powerups:1, recipe:[['plain',5],['wide',2],['double',1]] },
-    2:  { name:'DRIFTWOOD', design:'dots',    powerups:1, recipe:[['plain',3],['drift',4],['double',2],['wide',1]] },
-    3:  { name:'TUNNELS',   design:'grid',    powerups:2, recipe:[['tunnel',4],['plain',2],['double',2],['wide',1]] },
-    4:  { name:'WEAVE',     design:'stripes', powerups:2, recipe:[['stagger',4],['drift',3],['double',2],['plain',1]] },
-    5:  { name:'SQUEEZE',   design:'hazard',  powerups:2, recipe:[['pinch',4],['drift',2],['double',2],['plain',1]] },
-    6:  { name:'CROSSFIRE', design:'circuit', powerups:2, recipe:[['laser',3],['orbit',2],['stagger',2],['drift',1]] },
-    7:  { name:'TRIDENT',   design:'rivets',  powerups:3, recipe:[['triple',3],['gate',2],['laser',2],['tunnel',1]] },
-    8:  { name:'GAUNTLET',  design:'spikes',  powerups:3, recipe:[['laser',3],['triple',2],['orbit',2],['gate',2]] },
-    9:  { name:'OVERLOAD',  design:'circuit', powerups:3, recipe:[['laser',2],['orbit',2],['gate',2],['stagger',2],['triple',1]] },
-    10: { name:'DOUBLECROSS',design:'glow',   powerups:4, recipe:[['doublelaser',3],['triple',2],['orbit',2],['gate',2]] },
-    11: { name:'MELTDOWN',  design:'hazard',  powerups:4, recipe:[['doublelaser',3],['orbit',2],['gate',2],['laser',2]] },
-    12: { name:'SINGULARITY',design:'glow',   powerups:5, recipe:[['doublelaser',3],['orbit',2],['triple',2],['gate',2],['laser',1]] },
+  // ============ AUTHORED LEVELS ============
+  // Every level is a FIXED, hand-designed course: an explicit ordered list of obstacles with
+  // explicit gap positions (fractions of the playable band, so they scale to any screen but
+  // stay identical) and power-ups at fixed points. NO randomness in level mode — every player
+  // anywhere plays the byte-for-byte identical level. Win = reach the end of the course.
+  //   spec types: plain, wide, double{ys}, triple{ys}, stagger{ys}, drift{y,dir},
+  //               laser{y,top}, dlaser{y,top}, pinch{y}, tunnel{y}, orbit{y,dir}, gate{y}
+  //   y / ys: gap center(s) as a fraction 0..1 of the playable band (0=top, 1=bottom)
+  //   pus: power-ups -> { at:<0-based obstacle index>, kind:'shield'|'slow'|'magnet'|'auto', y:frac }
+  const LEVELS = {
+    1: { name:'WARMUP', design:'plain', seq:[
+        {t:'plain',y:0.5},{t:'plain',y:0.3},{t:'plain',y:0.7},{t:'wide',y:0.4},{t:'plain',y:0.65},{t:'plain',y:0.4}
+      ], pus:[{at:2,kind:'shield',y:0.5}] },
+    2: { name:'DRIFTWOOD', design:'dots', seq:[
+        {t:'plain',y:0.5},{t:'drift',y:0.4,dir:1},{t:'plain',y:0.7},{t:'drift',y:0.55,dir:-1},
+        {t:'double',ys:[0.3,0.7]},{t:'drift',y:0.4,dir:1},{t:'plain',y:0.6}
+      ], pus:[{at:3,kind:'slow',y:0.5}] },
+    3: { name:'TUNNELS', design:'grid', seq:[
+        {t:'plain',y:0.5},{t:'tunnel',y:0.5},{t:'plain',y:0.3},{t:'tunnel',y:0.6},
+        {t:'double',ys:[0.3,0.7]},{t:'plain',y:0.4},{t:'tunnel',y:0.55},{t:'plain',y:0.5}
+      ], pus:[{at:3,kind:'shield',y:0.5}] },
+    4: { name:'WEAVE', design:'stripes', seq:[
+        {t:'plain',y:0.5},{t:'stagger',ys:[0.28,0.72]},{t:'plain',y:0.4},{t:'stagger',ys:[0.7,0.3]},
+        {t:'drift',y:0.5,dir:1},{t:'double',ys:[0.3,0.7]},{t:'stagger',ys:[0.28,0.72]},{t:'plain',y:0.6},{t:'plain',y:0.4}
+      ], pus:[{at:2,kind:'shield',y:0.5},{at:6,kind:'magnet',y:0.5}] },
+    5: { name:'SQUEEZE', design:'hazard', seq:[
+        {t:'plain',y:0.5},{t:'pinch',y:0.5},{t:'plain',y:0.3},{t:'pinch',y:0.6},{t:'drift',y:0.45,dir:1},
+        {t:'pinch',y:0.4},{t:'double',ys:[0.3,0.7]},{t:'plain',y:0.6},{t:'pinch',y:0.5},{t:'plain',y:0.45}
+      ], pus:[{at:2,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5}] },
+    6: { name:'CROSSFIRE', design:'circuit', seq:[
+        {t:'plain',y:0.5},{t:'laser',y:0.45,top:true},{t:'plain',y:0.6},{t:'orbit',y:0.5},{t:'laser',y:0.55,top:false},
+        {t:'drift',y:0.4,dir:1},{t:'orbit',y:0.5},{t:'stagger',ys:[0.3,0.7]},{t:'laser',y:0.5,top:true},{t:'plain',y:0.4},{t:'orbit',y:0.55}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5}] },
+    7: { name:'TRIDENT', design:'rivets', seq:[
+        {t:'plain',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'plain',y:0.4},{t:'gate',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},
+        {t:'laser',y:0.5,top:true},{t:'gate',y:0.45},{t:'tunnel',y:0.6},{t:'triple',ys:[0.2,0.5,0.8]},{t:'plain',y:0.4},
+        {t:'gate',y:0.55},{t:'plain',y:0.5}
+      ], pus:[{at:2,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5},{at:9,kind:'auto',y:0.5}] },
+    8: { name:'GAUNTLET', design:'spikes', seq:[
+        {t:'plain',y:0.5},{t:'laser',y:0.5,top:true},{t:'triple',ys:[0.2,0.5,0.8]},{t:'orbit',y:0.5},{t:'gate',y:0.45},
+        {t:'plain',y:0.6},{t:'laser',y:0.5,top:false},{t:'triple',ys:[0.2,0.5,0.8]},{t:'orbit',y:0.55},{t:'gate',y:0.5},
+        {t:'drift',y:0.4,dir:1},{t:'laser',y:0.45,top:true},{t:'plain',y:0.5}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5},{at:10,kind:'shield',y:0.5}] },
+    9: { name:'OVERLOAD', design:'circuit', seq:[
+        {t:'plain',y:0.5},{t:'laser',y:0.45,top:true},{t:'orbit',y:0.5},{t:'gate',y:0.5},{t:'stagger',ys:[0.3,0.7]},
+        {t:'triple',ys:[0.2,0.5,0.8]},{t:'laser',y:0.55,top:false},{t:'orbit',y:0.45},{t:'gate',y:0.5},{t:'plain',y:0.5},
+        {t:'triple',ys:[0.2,0.5,0.8]},{t:'laser',y:0.45,top:true},{t:'orbit',y:0.55},{t:'plain',y:0.5}
+      ], pus:[{at:2,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5},{at:10,kind:'auto',y:0.5}] },
+    10:{ name:'DOUBLECROSS', design:'glow', seq:[
+        {t:'plain',y:0.5},{t:'dlaser',y:0.5,top:true},{t:'triple',ys:[0.2,0.5,0.8]},{t:'orbit',y:0.5},{t:'gate',y:0.45},
+        {t:'dlaser',y:0.5,top:false},{t:'plain',y:0.6},{t:'triple',ys:[0.2,0.5,0.8]},{t:'orbit',y:0.55},{t:'gate',y:0.5},
+        {t:'dlaser',y:0.45,top:true},{t:'drift',y:0.4,dir:-1},{t:'triple',ys:[0.2,0.5,0.8]},{t:'plain',y:0.5},{t:'plain',y:0.45}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5},{at:10,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5}] },
+    11:{ name:'MELTDOWN', design:'hazard', seq:[
+        {t:'plain',y:0.5},{t:'dlaser',y:0.5,top:true},{t:'orbit',y:0.5},{t:'gate',y:0.45},{t:'dlaser',y:0.5,top:false},
+        {t:'laser',y:0.5,top:true},{t:'orbit',y:0.55},{t:'gate',y:0.5},{t:'dlaser',y:0.45,top:false},{t:'plain',y:0.6},
+        {t:'orbit',y:0.45},{t:'gate',y:0.5},{t:'dlaser',y:0.5,top:true},{t:'plain',y:0.5},{t:'laser',y:0.5,top:false},{t:'plain',y:0.45}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:6,kind:'slow',y:0.5},{at:10,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5}] },
+    12:{ name:'SINGULARITY', design:'glow', seq:[
+        {t:'plain',y:0.5},{t:'dlaser',y:0.5,top:true},{t:'orbit',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'gate',y:0.45},
+        {t:'dlaser',y:0.5,top:false},{t:'laser',y:0.5,top:true},{t:'orbit',y:0.55},{t:'triple',ys:[0.2,0.5,0.8]},{t:'gate',y:0.5},
+        {t:'dlaser',y:0.45,top:false},{t:'orbit',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'gate',y:0.5},{t:'dlaser',y:0.5,top:true},
+        {t:'orbit',y:0.55},{t:'laser',y:0.5,top:false},{t:'plain',y:0.5}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:5,kind:'slow',y:0.5},{at:9,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5},{at:16,kind:'shield',y:0.5}] },
+    13:{ name:'RIPTIDE', design:'circuit', seq:[
+        {t:'plain',y:0.5},{t:'drift',y:0.4,dir:1},{t:'laser',y:0.5,top:true},{t:'orbit',y:0.5},{t:'stagger',ys:[0.3,0.7]},
+        {t:'gate',y:0.45},{t:'triple',ys:[0.2,0.5,0.8]},{t:'dlaser',y:0.5,top:false},{t:'plain',y:0.6},{t:'pinch',y:0.4},
+        {t:'orbit',y:0.55},{t:'laser',y:0.45,top:true},{t:'tunnel',y:0.5},{t:'gate',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},
+        {t:'drift',y:0.6,dir:-1},{t:'dlaser',y:0.5,top:true},{t:'orbit',y:0.45},{t:'stagger',ys:[0.7,0.3]},{t:'plain',y:0.5}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:5,kind:'slow',y:0.5},{at:9,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5},{at:17,kind:'shield',y:0.5}] },
+    14:{ name:'CASCADE', design:'glow', seq:[
+        {t:'plain',y:0.5},{t:'laser',y:0.45,top:true},{t:'orbit',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'gate',y:0.5},
+        {t:'dlaser',y:0.5,top:false},{t:'stagger',ys:[0.3,0.7]},{t:'pinch',y:0.45},{t:'orbit',y:0.55},{t:'laser',y:0.5,top:true},
+        {t:'tunnel',y:0.5},{t:'gate',y:0.45},{t:'dlaser',y:0.5,top:true},{t:'triple',ys:[0.2,0.5,0.8]},{t:'drift',y:0.4,dir:1},
+        {t:'orbit',y:0.5},{t:'laser',y:0.55,top:false},{t:'gate',y:0.5},{t:'dlaser',y:0.45,top:false},{t:'stagger',ys:[0.7,0.3]},
+        {t:'orbit',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'dlaser',y:0.5,top:true},{t:'plain',y:0.5}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:5,kind:'slow',y:0.5},{at:9,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5},{at:17,kind:'shield',y:0.5},{at:21,kind:'slow',y:0.5}] },
+    15:{ name:'EVENT HORIZON', design:'glow', seq:[
+        {t:'plain',y:0.5},{t:'dlaser',y:0.5,top:true},{t:'orbit',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'gate',y:0.45},
+        {t:'laser',y:0.5,top:true},{t:'stagger',ys:[0.3,0.7]},{t:'orbit',y:0.55},{t:'pinch',y:0.4},{t:'dlaser',y:0.5,top:false},
+        {t:'gate',y:0.5},{t:'triple',ys:[0.2,0.5,0.8]},{t:'tunnel',y:0.5},{t:'orbit',y:0.45},{t:'laser',y:0.5,top:true},
+        {t:'dlaser',y:0.5,top:false},{t:'gate',y:0.5},{t:'drift',y:0.6,dir:-1},{t:'triple',ys:[0.2,0.5,0.8]},{t:'orbit',y:0.5},
+        {t:'stagger',ys:[0.7,0.3]},{t:'dlaser',y:0.45,top:true},{t:'gate',y:0.5},{t:'laser',y:0.55,top:false},{t:'orbit',y:0.55},
+        {t:'triple',ys:[0.2,0.5,0.8]},{t:'dlaser',y:0.5,top:true},{t:'plain',y:0.5}
+      ], pus:[{at:1,kind:'shield',y:0.5},{at:5,kind:'slow',y:0.5},{at:9,kind:'shield',y:0.5},{at:13,kind:'auto',y:0.5},{at:17,kind:'shield',y:0.5},{at:21,kind:'slow',y:0.5},{at:25,kind:'shield',y:0.5}] },
   };
-  function levelDef(n){ return LEVEL_DEFS[n] || LEVEL_DEFS[12]; }
-  function pickFromRecipe(recipe){
-    let total=0; for(const [,w] of recipe) total+=w;
-    let roll=rng()*total;
-    for(const [type,w] of recipe){ roll-=w; if(roll<=0) return type; }
-    return recipe[0][0];
+  function levelDef(n){ return LEVELS[n] || LEVELS[12]; }
+
+  let lvlSeqIndex=0; // which authored obstacle spawns next in the current level
+
+  // turn one authored spec into a runtime obstacle object — deterministic, NO rng()
+  function buildSpec(spec, x){
+    const pr=player.r, margin=WALL*H+player.r*1.3, w=Math.max(26,H*0.05);
+    const band=H-2*margin;
+    const gm=levelParams(curLevel).gap;                 // per-level gap scalar (gentle ramp)
+    const gp=(mult)=> Math.max(pr*2*2.0, band*0.32*(mult||1)*gm);
+    const cy=(frac,g)=>{ const lo=margin+g/2, hi=H-margin-g/2; return lo+Math.max(0,Math.min(1,frac))*Math.max(1,hi-lo); };
+    const t=spec.t;
+    if(t==='plain'||t==='wide'){ const g=gp(t==='wide'?1.5:1.0); const gy=cy(spec.y,g); return {type:'plain',x,w,gapY:gy,gapH:g,passed:false,gemY:gy,gemGot:false}; }
+    if(t==='double'){ const gaps=evenGaps(2, gp(0.78), margin); return {type:'double',x,w,gaps,passed:false,gemY:gaps[spec.gemAt||0].y,gemGot:false}; }
+    if(t==='triple'){ const gaps=evenGaps(3, gp(0.6), margin); return {type:'triple',x,w,gaps,passed:false,gemY:gaps[spec.gemAt!=null?spec.gemAt:1].y,gemGot:false}; }
+    if(t==='stagger'){ const gaps=staggerGaps(gp(0.72), margin); return {type:'stagger',x,w:w*1.1,gaps,passed:false,gemY:gaps[spec.gemAt||0].y,gemGot:false}; }
+    if(t==='drift'){ const g=gp(1.0); const gy=cy(spec.y,g); const amp=Math.min(band/2,g*0.5); return {type:'drift',x,w,gapY:gy,baseY:gy,gapH:g,driftDir:spec.dir||1,driftAmp:amp,minC:margin+g/2,maxC:H-margin-g/2,phase:spec.phase||0,passed:false,gemY:gy,gemGotDY:0,gemGot:false}; }
+    if(t==='laser'){ const g=gp(1.9); const gy=cy(spec.y,g); const blockTop=!!spec.top; const safeCenter=gy+(!blockTop?g*0.26:-g*0.26); return {type:'laser',x,w,gapY:gy,gapH:g,passed:false,blockTop,switched:false,switchX:W*0.60,gemY:safeCenter,gemGot:false}; }
+    if(t==='dlaser'){ const g=gp(1.9); const gy=cy(spec.y,g); const blockTop=!!spec.top; const safe=gy+(blockTop?g*0.26:-g*0.26); return {type:'laser',x,w,gapY:gy,gapH:g,passed:false,blockTop,switched:false,switchX:W*0.78,switch2:false,switch2X:W*0.54,gemY:safe,gemGot:false}; }
+    if(t==='pinch'){ const target=gp(1.05); const startG=Math.min(H*0.5,target*1.9); const gy=cy(spec.y,target); return {type:'pinch',x,w,gapY:gy,gapH:startG,targetH:target,startH:startG,passed:false,gemY:gy,gemGot:false}; }
+    if(t==='tunnel'){ const g=gp(0.95); const gy=cy(spec.y,g); return {type:'tunnel',x,w:w*2.6,gapY:gy,gapH:g,passed:false,gemY:gy,gemGot:false}; }
+    if(t==='orbit'){ const g=Math.max(pr*2*2.8, band*0.32*1.95*gm); const gy=cy(spec.y,g); return {type:'orbit',x,w:w*1.2,gapY:gy,gapH:g,orbR:g*0.30,ballR:Math.max(8,pr*0.78),ang:spec.ang||0,spin:(spec.dir||1)*0.003,passed:false,gemY:gy,gemGot:false}; }
+    if(t==='gate'){ const target=Math.max(pr*2*2.0, band*0.32*0.74*gm); const startG=Math.min(H*0.55, band*0.32*1.5*gm); const gy=cy(spec.y,startG); return {type:'gate',x,w,gapY:gy,gapH:startG,targetH:target,startH:startG,passed:false,gemY:gy,gemGot:false}; }
+    const g=gp(1.0); const gy=cy(spec.y!=null?spec.y:0.5,g); return {type:'plain',x,w,gapY:gy,gapH:g,passed:false,gemY:gy,gemGot:false};
   }
-  let lastLevelType=''; // avoid 2 identical in a row within a level
+  // spawn the next authored obstacle and any power-up tied to its index. returns obstacle or null at end.
+  function spawnLevelObstacle(x){
+    const def=levelDef(curLevel); if(lvlSeqIndex>=def.seq.length) return null;
+    const i=lvlSeqIndex++; const ob=buildSpec(def.seq[i], x);
+    if(def.pus){ const margin=WALL*H+player.r*1.3, band=H-2*margin; for(const p of def.pus){ if(p.at===i){ powerups.push({x:x-gapSpacing()*0.45,y:margin+Math.max(0,Math.min(1,p.y))*band,r:PU_R*H,got:false,bob:0,kind:p.kind}); } } }
+    return ob;
+  }
+  let lastLevelType='';
   function pickType(){
-    if(levelMode){
-      if(obsPassed<1) return 'plain'; // ease in with one plain
-      const recipe = levelDef(curLevel).recipe;
-      let t=pickFromRecipe(recipe);
-      if(t===lastLevelType) t=pickFromRecipe(recipe); // one re-roll to avoid repeats
-      lastLevelType=t;
-      return t;
-    }
     const pc = obsPassed;
-    if(pc<3) return 'plain';
+    if(pc<2) return 'plain';            // brief ease-in only
     const r=rng();
-    if(r<0.09) return 'wide';
-    if(pc>=32 && r<0.20) return 'doublelaser'; // laser that switches twice (deep)
-    if(pc>=20 && r<0.32) return 'triple';      // three-gap (deep)
-    if(pc>=10 && r<0.46) return 'laser';        // switching laser
-    if(pc>=5  && r<0.60) return 'pinch';        // squeezing gap
-    if(pc>=5  && r<0.74) return 'drift';
-    if(pc>=3  && r<0.88) return 'double';
+    if(r<0.07) return 'wide';
+    // ramp in the full variety FAST so endless shows off every obstacle type early
+    if(pc>=22 && r<0.15) return 'doublelaser';
+    if(pc>=12 && r<0.25) return 'gate';
+    if(pc>=8  && r<0.35) return 'orbit';
+    if(pc>=8  && r<0.45) return 'triple';
+    if(pc>=5  && r<0.55) return 'laser';
+    if(pc>=9  && r<0.62) return 'tunnel';
+    if(pc>=4  && r<0.71) return 'stagger';
+    if(pc>=4  && r<0.79) return 'pinch';
+    if(pc>=3  && r<0.87) return 'drift';
+    if(pc>=2  && r<0.94) return 'double';
     return 'plain';
   }
   function gapSpacing(){ const z=diffTier(); const t=Math.min(z*0.04,0.22); return H*(0.62-0.62*t)+player.r*2; }
-  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.6; const start=H*0.45; const sh=Math.min(z*0.04,0.24); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
+  function gapHeight(){ const z=diffTier(); const mn=player.r*2*2.6; const start=H*0.46; const sh=Math.min(z*0.04,0.24); let g=Math.max(mn,start*(1-sh)); const pc=obsPassed; if(!levelMode && pc<14)g*=1+(14-pc)*0.040; if(levelMode) g=Math.max(mn, g*levelParams(curLevel).gap); return g; }
 
   function makeObstacle(x){
     const type=pickType(); const margin=WALL*H+player.r*1.3; const gemR=GEM_R*H; const passed=obsPassed; const w=Math.max(26,H*0.05);
     if(type==='double'){
-      const g=Math.max(player.r*2*2.2, gapHeight()*0.78); const us=H-2*margin; const half=us/2;
-      const c1=margin+g/2+rng()*(half-g); const c2=margin+half+g/2+rng()*(half-g);
-      const gaps=[{y:c1,h:g},{y:c2,h:g}]; const gg=gaps[rng()<0.5?0:1];
-      const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
+      const gaps=evenGaps(2, Math.max(player.r*2*2.2, gapHeight()*0.78), margin);
+      const minBar=player.r*1.6, topBar=gaps[0].y-gaps[0].h/2-margin, maxShift=Math.max(0,topBar-minBar);
+      const shift=(rng()*2-1)*maxShift; gaps.forEach(gg=>gg.y+=shift);
+      const gg=gaps[rng()<0.5?0:1]; const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
       return { type, x, w, gaps, passed:false, gemY:gg.y+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
     }
     if(type==='wide'){ const g=gapHeight()*1.55; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn); const mo=Math.max(0,g/2-gemR-player.r*0.5); return { type:'plain', x, w, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false }; }
@@ -842,16 +950,14 @@
     }
     if(type==='doublelaser'){
       const g=gapHeight()*1.9; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
-      const blockTop = rng()<0.5;
-      return { type:'laser', x, w, gapY:gy, gapH:g, passed:false, blockTop, switched:false, switchX:W*0.66, switch2:false, switch2X:W*0.36, gemY:gy, gemGot:false };
+      const blockTop = rng()<0.5; const safe=gy+(blockTop?g*0.26:-g*0.26);
+      return { type:'laser', x, w, gapY:gy, gapH:g, passed:false, blockTop, switched:false, switchX:W*0.78, switch2:false, switch2X:W*0.54, gemY:safe, gemGot:false };
     }
     if(type==='triple'){
-      const g=Math.max(player.r*2*2.1, gapHeight()*0.62); const us=H-2*margin; const third=us/3;
-      const c1=margin+g/2+rng()*(third-g);
-      const c2=margin+third+g/2+rng()*(third-g);
-      const c3=margin+third*2+g/2+rng()*(third-g);
-      const gaps=[{y:c1,h:g},{y:c2,h:g},{y:c3,h:g}]; const gg=gaps[Math.floor(rng()*3)];
-      const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
+      const gaps=evenGaps(3, Math.max(player.r*2*2.1, gapHeight()*0.62), margin);
+      const minBar=player.r*1.6, topBar=gaps[0].y-gaps[0].h/2-margin, maxShift=Math.max(0,topBar-minBar);
+      const shift=(rng()*2-1)*maxShift; gaps.forEach(gg=>gg.y+=shift);
+      const gg=gaps[Math.floor(rng()*3)]; const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
       return { type:'triple', x, w, gaps, passed:false, gemY:gg.y+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
     }
     if(type==='pinch'){
@@ -861,12 +967,9 @@
       return { type:'pinch', x, w, gapY:gy, gapH:startG, targetH:target, startH:startG, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
     }
     if(type==='stagger'){
-      // two narrow gaps, vertically offset — quick weave (S-curve feel)
-      const g=Math.max(player.r*2*2.0, gapHeight()*0.72); const us=H-2*margin;
-      const top=margin + rng()*(us*0.32);
-      const bot=H-margin - rng()*(us*0.32);
-      const gaps=[{y:top+g/2,h:g},{y:bot-g/2,h:g}]; const gg=gaps[rng()<0.5?0:1];
-      const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
+      // one gap high, one low, with a fat solid middle bar — quick top/bottom weave
+      const gaps=staggerGaps(Math.max(player.r*2*2.0, gapHeight()*0.72), margin);
+      const gg=gaps[rng()<0.5?0:1]; const mo=Math.max(0,gg.h/2-gemR-player.r*0.5);
       return { type:'stagger', x, w:w*1.1, gaps, passed:false, gemY:gg.y+(rng()*2-1)*mo*gemOffsetFor(passed), gemGot:false };
     }
     if(type==='tunnel'){
@@ -876,13 +979,13 @@
       return { type:'tunnel', x, w:w*2.6, gapY:gy, gapH:g, passed:false, gemY:gy+(rng()*2-1)*mo*gemOffsetFor(passed)*0.5, gemGot:false };
     }
     if(type==='orbit'){
-      // a wide gap with a hazard ball orbiting its center — the safe spot rotates.
-      // big readable circle (as before); spin is slow so you can time your pass.
-      const g=gapHeight()*1.7; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
-      const orbR=g*0.30; // orbit radius
-      const ballR=Math.max(8, player.r*0.9);
+      // a wide gap with a hazard ball orbiting its center — big readable circle, slow spin,
+      // and it's DEADLY across its whole swing (collision handled outside the body check).
+      const g=gapHeight()*1.95; const mn=margin+g/2,mx=H-margin-g/2; const gy=mn+rng()*Math.max(1,mx-mn);
+      const orbR=g*0.30;
+      const ballR=Math.max(8, player.r*0.78);
       const mo=Math.max(0,g/2-gemR-player.r*0.5);
-      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.009, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
+      return { type:'orbit', x, w:w*1.2, gapY:gy, gapH:g, orbR, ballR, ang:rng()*6.28, spin:(rng()<0.5?-1:1)*0.003, passed:false, gemY:gy+(rng()*2-1)*mo*0.3, gemGot:false };
     }
     if(type==='gate'){
       // gap closes as it approaches (like pinch but nearly shuts) — commit early
@@ -900,15 +1003,34 @@
     if(o.type==='double'||o.type==='triple'||o.type==='stagger'){ const g=[...o.gaps].sort((a,b)=>a.y-b.y); const sp=[]; let c=0; for(const gg of g){ sp.push({top:c,bot:gg.y-gg.h/2}); c=gg.y+gg.h/2; } sp.push({top:c,bot:H}); return sp; }
     const gt=o.gapY-o.gapH/2, gb=o.gapY+o.gapH/2; return [{top:0,bot:gt},{top:gb,bot:H}];
   }
+  // lay out N evenly-spaced gaps with EQUAL solid bars (never thin slivers you can fly through)
+  function evenGaps(N, gWanted, margin){
+    const minBar=player.r*1.6, usable=H-2*margin;
+    const gMax=(usable-(N+1)*minBar)/N;
+    const g=Math.max(player.r*2*1.45, Math.min(gWanted, gMax));
+    const bar=(usable-N*g)/(N+1);
+    const gaps=[]; for(let i=0;i<N;i++) gaps.push({y:margin+bar*(i+1)+g*(i+0.5), h:g});
+    return gaps;
+  }
+  // stagger: one gap up high, one down low, with a FAT solid middle bar between them
+  function staggerGaps(gWanted, margin){
+    const minBar=player.r*1.6, usable=H-2*margin;
+    const endBar=Math.max(minBar, usable*0.05);
+    const gMax=(usable-2*endBar-minBar)/2;
+    const g=Math.max(player.r*2*1.45, Math.min(gWanted, gMax));
+    const top=margin+endBar+g/2, bot=H-margin-endBar-g/2;
+    return [{y:top,h:g},{y:bot,h:g}];
+  }
 
   // ============ INIT ============
   function reset(){
     const pr=P_R*H;
     player={ x:W*PLAYER_X_FRAC, y:H*0.5, r:pr, vy:0, trail:[], shield:false };
     gravity=1; obstacles=[]; particles=[]; powerups=[]; coinItems=[];
-    streak=0; points=0; scrollX=0; t=0; shake=0; slowmo=0; slowField=0; magnetField=0; autoField=0; coinX2Field=0; runBonusCoins=0; nearMissCd=0; invuln=0; obsPassed=0; runCoins=0; runMaxStreak=0; runGems=0; runMaxZone=0;
+    streak=0; points=0; scrollX=0; t=0; shake=0; slowmo=0; slowField=0; timeScale=1; magnetField=0; autoField=0; coinX2Field=0; runBonusCoins=0; nearMissCd=0; invuln=0; obsPassed=0; runCoins=0; runMaxStreak=0; runGems=0; runMaxZone=0;
     curZoneIdx=0; nextPowerupAt=18; spawnX=W+40;
-    let sx=W*0.9; for(let i=0;i<3;i++){ sx+=gapSpacing(); obstacles.push(makeObstacle(sx)); } spawnX=sx;
+    if(levelMode){ lvlSeqIndex=0; let sx=W*0.9; for(let i=0;i<3;i++){ sx+=gapSpacing(); const ob=spawnLevelObstacle(sx); if(ob) obstacles.push(ob); } spawnX=sx; }
+    else { let sx=W*0.9; for(let i=0;i<3;i++){ sx+=gapSpacing(); obstacles.push(makeObstacle(sx)); } spawnX=sx; }
     updateHUD();
   }
 
@@ -920,6 +1042,12 @@
     gravity*=-1; SFX.flip();
     for(let i=0;i<6;i++){ particles.push({x:player.x,y:player.y,vx:(Math.random()-0.5)*0.18,vy:(Math.random()-0.5)*0.18+gravity*-0.05,life:300,max:300,r:player.r*0.3,tint:ZN(curZoneIdx).accent}); }
   }
+  // mobile: kill text-selection, the copy/paste callout, and double-tap zoom from fast tapping
+  document.addEventListener('selectstart', e=>e.preventDefault());
+  document.addEventListener('contextmenu', e=>e.preventDefault());
+  document.addEventListener('gesturestart', e=>e.preventDefault());
+  let _lastTap=0;
+  document.addEventListener('touchend', e=>{ const tn=e.target&&e.target.tagName; if(tn==='TEXTAREA'||tn==='INPUT') return; const now=Date.now(); if(now-_lastTap<=300){ e.preventDefault(); } _lastTap=now; }, {passive:false});
   wrap.addEventListener('pointerdown',(e)=>{
     // shop / missions / leaderboard open: let them handle their own taps, ignore flips
     if(document.getElementById('shop').classList.contains('show')) return;
@@ -941,7 +1069,7 @@
   function showStartView(){ goView.classList.remove('show'); startView.classList.remove('gone'); }
   function startGame(){ if(document.getElementById('shop').classList.contains('show'))return; if(missionsPanel.classList.contains('show'))return; if(boardPanel.classList.contains('show'))return; levelMode=false; dailyMode=false; lastLevel=0; reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1'; document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.toggle('zen', zenMode); applyZoneCSS(0); track('game_start',{mode: zenMode?'zen':'normal'}); }
   function startLevel(n){
-    levelMode=true; dailyMode=false; curLevel=n; levelTargetGems=levelParams(n).target; lastLevelType=''; lvlPowerupsSpawned=0;
+    levelMode=true; dailyMode=false; curLevel=n; levelTargetGems=levelDef(n).seq.length; lvlSeqIndex=0; lastLevelType=''; lvlPowerupsSpawned=0;
     lvlSeed=(n*2654435761)>>>0; // deterministic seed per level
     levelsPanel.classList.remove('show');
     reset(); state='play'; overlay.classList.add('hidden'); hud.style.opacity='1';
@@ -957,12 +1085,18 @@
     document.body.classList.add('playing'); document.body.classList.remove('levels'); document.body.classList.remove('zen');
     applyZoneCSS(0); SFX.ui(); track('daily_start',{date:todayStr()});
   }
-  function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML=levelDef(curLevel).name+' · <b>'+Math.min(points,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
+  function updateLevelHUD(){ const el=document.getElementById('lvlHud'); if(!el) return; if(levelMode && state==='play'){ el.style.display='block'; el.innerHTML=levelDef(curLevel).name+' · <b>'+Math.min(obsPassed,levelTargetGems)+'/'+levelTargetGems+'</b>'; } else el.style.display='none'; }
   function levelWin(){
     state='dead'; t=0; levelMode=false; lastLevel=curLevel; lastLevelWon=true;
     const firstClear = curLevel>(save.levelsBeaten||0);
     track('level_complete',{level:curLevel, level_name:levelDef(curLevel).name, first_clear:firstClear});
     if(firstClear){ save.levelsBeaten=curLevel; }
+    // STAR RATING: 1 = completed, 2 = collected 60%+ of the gems, 3 = collected ALL gems
+    const totalGems=levelTargetGems, gotGems=points;
+    let stars=1; if(gotGems>=totalGems) stars=3; else if(gotGems>=Math.ceil(totalGems*0.6)) stars=2;
+    if(!save.levelStars) save.levelStars={};
+    const prevStars=save.levelStars[curLevel]||0; const isNewStarBest=stars>prevStars;
+    save.levelStars[curLevel]=Math.max(prevStars,stars);
     // FIXED reward: big bonus on first clear, small reward on replays
     runCoins = firstClear ? levelReward(curLevel) : levelReplayReward(curLevel);
     save.coins+=runCoins; persist();
@@ -971,14 +1105,21 @@
     document.getElementById('goBest').textContent=save.best;
     document.getElementById('goBestPts').textContent=save.bestPts;
     document.querySelector('#goView .goLabel').textContent='LEVEL '+curLevel+' CLEAR';
+    // light the earned stars + caption
+    const gs=document.getElementById('goStars'); const sts=gs.querySelectorAll('.starRow .st');
+    sts.forEach((s,i)=>{ s.classList.toggle('on', i<stars); });
+    gs.querySelector('.starCap').textContent = gotGems+' / '+totalGems+' GEMS'+(isNewStarBest?'  ·  BEST!':'');
+    gs.classList.remove('show'); void gs.offsetWidth; gs.classList.add('show');
     const nb=document.getElementById('goNewBest'); nb.classList.add('isbest'); nb.querySelector('.gcV').textContent = (curLevel>=LEVEL_COUNT)?'ALL DONE!':'UNLOCKED '+(curLevel+1);
     const ce=document.getElementById('coinEarned'); ce.innerHTML='+'+runCoins+' COINS'+(firstClear?'  <span style="opacity:0.8;font-size:11px">(FIRST CLEAR)</span>':''); ce.classList.remove('show'); void ce.offsetWidth; ce.classList.add('show');
     setGoButtons('won');
     startView.classList.add('gone'); goView.classList.add('show'); void goView.offsetWidth;
     hud.style.opacity='0'; document.body.classList.remove('playing'); document.body.classList.remove('levels');
     overlay.classList.remove('hidden'); updateLevelHUD(); SFX.combo();
+    if(stars>=3) setTimeout(()=>SFX.combo(),180); // extra flourish for a perfect run
   }
   function gameOver(){
+    document.getElementById('goStars').classList.remove('show'); // stars only show on level WIN
     if(levelMode){ // failed the level (died before hitting target)
       state='dead'; t=0;
       const reached=points; levelMode=false; lastLevel=curLevel; lastLevelWon=false;
@@ -988,7 +1129,7 @@
       document.getElementById('goBest').textContent=save.best;
       document.getElementById('goBestPts').textContent=save.bestPts;
       document.querySelector('#goView .goLabel').textContent='LEVEL '+curLevel+' FAILED';
-      const nb=document.getElementById('goNewBest'); nb.classList.remove('isbest'); nb.querySelector('.gcV').textContent='NEEDED '+levelTargetGems;
+      const nb=document.getElementById('goNewBest'); nb.classList.remove('isbest'); nb.querySelector('.gcV').textContent='REACHED '+Math.min(obsPassed,levelTargetGems)+'/'+levelTargetGems;
       const ce=document.getElementById('coinEarned'); ce.innerHTML=''; ce.classList.remove('show');
       setGoButtons('failed');
       startView.classList.add('gone'); goView.classList.add('show'); void goView.offsetWidth;
@@ -1000,8 +1141,9 @@
     const isNewBest = points>save.bestPts || runMaxStreak>save.best;
     save.best=Math.max(save.best,runMaxStreak); save.bestPts=Math.max(save.bestPts,points);
     updateMissionProgress();
-    // coins = points × streak multiplier (1 + maxStreak/20, capped ×4) + 2x-window bonus
-    const mult=Math.min(4, 1 + runMaxStreak/20);
+    // coins = points × multiplier. multiplier grows with TOTAL gems collected this run
+    // (1 + gems/12, capped ×4) and never drops — collecting more always pays more.
+    const mult=Math.min(4, 1 + points/12);
     runCoins=Math.round(points*mult)+runBonusCoins; save.coins+=runCoins;
     recordScore(points);
     track('game_over',{score:points, max_streak:runMaxStreak, was_daily:dailyMode, score_bucket: points<5?'0-4':points<15?'5-14':points<30?'15-29':points<60?'30-59':'60+'});
@@ -1037,7 +1179,7 @@
   function announceZone(idx){ const z=ZN(idx); const a=document.getElementById('announce'); document.getElementById('annZone').textContent=(idx%activeZones().length)+1; document.getElementById('annZone').style.color=z.accent; document.getElementById('annName').textContent='ZONE '+((idx%activeZones().length)+1); document.getElementById('annName').style.color=z.accent; a.classList.remove('show'); void a.offsetWidth; a.classList.add('show'); shake=Math.max(shake,10); }
   function showToast(t1,t2){ const el=document.getElementById('toast'); el.querySelector('.t1').textContent=t1; const t2el=el.querySelector('.t2'); t2el.textContent=t2; t2el.style.color=ZN(curZoneIdx).accent; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   function updateHUD(){ document.getElementById('pointsVal').textContent=points; document.getElementById('streakVal').textContent=streak; document.getElementById('bestVal').textContent=save.best; document.getElementById('coinHudVal').textContent=save.coins;
-    const mult=Math.min(4,1+runMaxStreak/20); const mv=document.getElementById('multVal'); mv.textContent='×'+mult.toFixed(1); mv.style.opacity = mult>1.04?'1':'0';
+    const mult=Math.min(4,1+points/12); const mv=document.getElementById('multVal'); mv.textContent='×'+mult.toFixed(1); mv.style.opacity = (mult>1.04 && !levelMode)?'1':'0';
     // big faint streak watermark
     const sb=document.getElementById('streakBg'); sb.textContent=streak; sb.style.opacity = (state==='play' && streak>0) ? Math.min(0.12, 0.04+streak/100).toFixed(3) : '0';
     // edge-glow intensifies with current streak (caps ~streak 30)
@@ -1047,10 +1189,14 @@
   let last=performance.now();
   function frame(now){
     let dt=now-last; last=now; if(dt>40)dt=40; t+=dt;
-    let slowFactor=1;
-    if(slowmo>0){ slowFactor=Math.min(slowFactor,0.35); slowmo=Math.max(0,slowmo-dt); }
-    if(slowField>0){ slowFactor=Math.min(slowFactor,0.45); slowField=Math.max(0,slowField-dt); }
-    const gdt=dt*slowFactor;
+    let target=1;
+    if(slowmo>0){ target=Math.min(target,0.35); slowmo=Math.max(0,slowmo-dt); }
+    if(slowField>0){ target=Math.min(target,0.45); slowField=Math.max(0,slowField-dt); }
+    // ease timeScale toward target: drop into slow-mo quickly (~60ms), climb back out gently
+    // (~260ms) so regaining full speed never snaps and kills you
+    const tau = (target < timeScale) ? 60 : 260;
+    timeScale += (target - timeScale) * (1 - Math.exp(-dt/tau));
+    const gdt=dt*timeScale;
     const smBar=document.getElementById('smBar');
     if(slowField>0){ smBar.classList.add('show'); document.getElementById('smFill').style.width=(slowField/3000*100)+'%'; } else smBar.classList.remove('show');
     if(state==='play') step(gdt);
@@ -1070,6 +1216,8 @@
         announceControl(); SFX.zone();
         // hand back with a gentle nudge in the current direction so it doesn't feel like a dead stop
         player.vy *= 0.5;
+        // return control in a brief slow-mo so the pace eases back instead of snapping to full speed
+        slowmo=Math.max(slowmo,750);
       }
       let targetY=H/2; const ref=obstacles.find(o=>o.x+o.w>player.x-player.r);
       if(ref){ if(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'){ // aim at the gap nearest current y
@@ -1110,22 +1258,13 @@
     for(const p of powerups) p.x-=dx;
 
     spawnX-=dx;
-    if(spawnX<W){ const nx=(obstacles.length?obstacles[obstacles.length-1].x:W)+gapSpacing(); obstacles.push(makeObstacle(nx)); spawnX=nx; }
+    if(spawnX<W){ const nx=(obstacles.length?obstacles[obstacles.length-1].x:W)+gapSpacing();
+      if(levelMode){ const ob=spawnLevelObstacle(nx); if(ob){ obstacles.push(ob); spawnX=nx; } else { spawnX=nx; } }
+      else { obstacles.push(makeObstacle(nx)); spawnX=nx; }
+    }
 
     if(levelMode){
-      // guaranteed powerups: spread the level's quota across the gem target
-      const quota = levelDef(curLevel).powerups;
-      const spacing = levelTargetGems/(quota+1);
-      const milestone = Math.floor((lvlPowerupsSpawned+1)*spacing);
-      if(lvlPowerupsSpawned<quota && points>=milestone){
-        const ref=obstacles.find(o=>o.x>player.x+player.r);
-        let py=ref?(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'?ref.gaps[0].y:ref.gapY):H*0.5;
-        // no 2x-coins in levels (fixed reward) — only useful gameplay powerups
-        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','auto','slow'] : ['slow','shield','magnet','auto','shield'];
-        const kind=kinds[Math.floor(rng()*kinds.length)];
-        powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind});
-        lvlPowerupsSpawned++;
-      }
+      /* power-ups are authored and spawned in spawnLevelObstacle() — nothing to do here */
     } else if(points>=nextPowerupAt && rng()<0.5){ const ref=obstacles.find(o=>o.x>player.x+player.r); let py=ref?(ref.type==='double'?ref.gaps[0].y:ref.gapY):H*0.5; const kinds=['slow','shield','magnet','auto','coins']; const kind=kinds[Math.floor(rng()*kinds.length)]; powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind}); nextPowerupAt=points+22+Math.floor(rng()*16); }
 
     const gemR=GEM_R*H; const passedSoFar=obsPassed; const grabBonus=grabBonusFor(passedSoFar)*gemR;
@@ -1149,22 +1288,25 @@
 
     for(const o of obstacles){
       const magBonus = magnetField>0 ? H*0.16 : 0;   // magnet: much larger grab reach
-      if(!o.gemGot){ const gx=o.x+o.w/2; if(Math.hypot(player.x-gx,player.y-o.gemY)<gemR+grabBonus+magBonus+player.r){ o.gemGot=true; points++; runGems++; if(coinX2Field>0)runBonusCoins++; pulse('pointsVal'); streak++; if(streak>runMaxStreak)runMaxStreak=streak; bumpStreak(); SFX.gem(); const zi=Math.floor(streak/10); if(zi>runMaxZone)runMaxZone=zi; if(zi!==curZoneIdx){ curZoneIdx=zi; applyZoneCSS(curZoneIdx); announceZone(curZoneIdx); slowmo=550; triggerSlowmoVignette(); comboCallout(streak); SFX.zone(); SFX.combo(); } for(let i=0;i<10;i++){ const a=Math.random()*6.28,s=Math.random()*0.22+0.04; particles.push({x:gx,y:o.gemY,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:380,max:380,r:gemR*(0.18+Math.random()*0.25),tint:ZN(curZoneIdx).accent}); } updateHUD(); if(levelMode){ updateLevelHUD(); if(points>=levelTargetGems){ levelWin(); return; } } } }
+      if(!o.gemGot){ const gx=o.x+o.w/2; if(Math.hypot(player.x-gx,player.y-o.gemY)<gemR+grabBonus+magBonus+player.r){ o.gemGot=true; points++; runGems++; if(coinX2Field>0)runBonusCoins++; pulse('pointsVal'); streak++; if(streak>runMaxStreak)runMaxStreak=streak; bumpStreak(); SFX.gem(); const zi=Math.floor(streak/10); if(zi>runMaxZone)runMaxZone=zi; if(zi!==curZoneIdx){ curZoneIdx=zi; applyZoneCSS(curZoneIdx); announceZone(curZoneIdx); slowmo=550; triggerSlowmoVignette(); comboCallout(streak); SFX.zone(); SFX.combo(); } for(let i=0;i<10;i++){ const a=Math.random()*6.28,s=Math.random()*0.22+0.04; particles.push({x:gx,y:o.gemY,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:380,max:380,r:gemR*(0.18+Math.random()*0.25),tint:ZN(curZoneIdx).accent}); } updateHUD(); if(levelMode){ updateLevelHUD(); } } }
       if(!o.passed && o.x+o.w<player.x-player.r){
         o.passed=true; obsPassed++;
         // advanced obstacles get a passing whoosh
         if(o.type==='laser'||o.type==='triple'||o.type==='pinch') SFX.whoosh();
         // streak is handled on gem grab now. passing WITHOUT the gem resets the streak (quietly).
-        if(!o.gemGot){ streak=0; if(curZoneIdx!==0){ curZoneIdx=0; applyZoneCSS(0); } updateHUD(); }
+        // passing WITHOUT the gem softly trims the combo (−2) instead of wiping it — one
+        // unavoidable miss shouldn't tank a long run. zone follows the trimmed value.
+        if(!o.gemGot){ streak=Math.max(0,streak-2); const zi=Math.floor(streak/10); if(zi!==curZoneIdx){ curZoneIdx=zi; applyZoneCSS(curZoneIdx); } updateHUD(); }
+        // LEVEL WIN: course complete — the last authored obstacle has been cleared
+        if(levelMode){ updateLevelHUD(); if(obsPassed>=levelTargetGems){ levelWin(); return; } }
       }
-      // NEAR-MISS: while centered in an obstacle and surviving, if clearance to nearest bar is tiny, brief slow-mo
-      if(nearMissCd<=0 && Math.abs(player.x-(o.x+o.w/2))<o.w){
-        let minClear=Infinity;
-        for(const s of barsFor(o)){ // distance from player edge to each bar edge that bounds the gap
-          if(s.bot<player.y){ minClear=Math.min(minClear,(player.y-player.r)-s.bot); }
-          if(s.top>player.y){ minClear=Math.min(minClear,s.top-(player.y+player.r)); }
+      // orbit ball is deadly across its ENTIRE swing — checked independently of the narrow
+      // body, because the ball orbits wider than the body and can hit the player off to the side
+      if(o.type==='orbit'){
+        const bx=o.x+o.w/2+Math.cos(o.ang)*o.orbR, by=o.gapY+Math.sin(o.ang)*o.orbR;
+        if(Math.hypot(player.x-bx,player.y-by)<o.ballR+player.r && state==='play' && invuln<=0 && autoField<=0){
+          if(zenMode){ player.vy=(player.y<by?-1:1)*VMAX*(H/800)*0.5; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; } else { die(); return; }
         }
-        if(minClear>0 && minClear<player.r*0.5){ slowmo=Math.max(slowmo,260); nearMissCd=900; }
       }
       if(player.x+player.r>o.x && player.x-player.r<o.x+o.w){
         let hit=false;
@@ -1174,8 +1316,6 @@
           const bt = o.blockTop ? gt : mid, bb = o.blockTop ? mid : gb;
           if(player.y+player.r>bt && player.y-player.r<bb) hit=true;
         }
-        // orbit: the orbiting ball is deadly (gap edges already handled by barsFor)
-        if(!hit && o.type==='orbit'){ const bx=o.x+o.w/2+Math.cos(o.ang)*o.orbR, by=o.gapY+Math.sin(o.ang)*o.orbR; if(Math.hypot(player.x-bx,player.y-by)<o.ballR+player.r) hit=true; }
         if(hit && state==='play' && invuln<=0 && autoField<=0){ if(zenMode){ player.vy=(player.y<H/2?1:-1)*VMAX*(H/800)*0.5; } else if(player.shield){ player.shield=false; shieldPop(); invuln=650; } else { die(); return; } }
       }
     }
@@ -1300,7 +1440,7 @@
   }
   function drawObstacle(o,z){
     const spans=barsFor(o);
-    const design = levelMode ? (LEVEL_DEFS[curLevel] && LEVEL_DEFS[curLevel].design) : null;
+    const design = levelMode ? (LEVELS[curLevel] && LEVELS[curLevel].design) : null;
     for(const s of spans){ if(s.bot>s.top){
       ctx.fillStyle=z.obst; roundRect(o.x,s.top,o.w,s.bot-s.top,6); ctx.fill();
       if(design) drawBarDesign(design, o.x, s.top, o.w, s.bot-s.top, z);
@@ -1753,6 +1893,7 @@
       else if(isBeaten){ meta='<div class="lvlName">'+levelDef(n).name+'</div><div class="lvlCoins"><span class="cdot"></span>'+levelReplayReward(n)+'</div>'; }
       else { meta='<div class="lvlName">'+levelDef(n).name+'</div><div class="lvlCoins"><span class="cdot"></span>'+levelReward(n)+'</div>'; }
       el.innerHTML='<div class="lvlNum">'+n+'</div>'+meta;
+      if(isBeaten){ const rating=(save.levelStars&&save.levelStars[n])||0; let sh='<div class="lvlStars">'; for(let i=0;i<3;i++) sh+='<span class="s'+(i<rating?' on':'')+'">★</span>'; sh+='</div>'; el.insertAdjacentHTML('beforeend', sh); }
       if(!locked){ el.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); startLevel(n); }); }
       grid.appendChild(el);
     }
