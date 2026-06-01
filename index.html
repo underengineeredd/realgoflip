@@ -243,6 +243,11 @@
   #fbText::placeholder { color:#6b7787; }
   #fbPrompt.show, #fbText.show { opacity:1; height:auto; }
   #fbText.show { height:auto; min-height:64px; }
+  #fbMobileQ { font-size:12px; color:#cfd8e3; font-weight:700; margin-top:16px; text-align:left; opacity:0; height:0; overflow:hidden; transition:opacity .2s; }
+  #fbMobileOpts { display:flex; gap:8px; margin-top:8px; opacity:0; height:0; overflow:hidden; transition:opacity .2s; }
+  #fbMobileQ.show, #fbMobileOpts.show { opacity:1; height:auto; }
+  .fbMob { flex:1; text-align:center; font-size:12px; font-weight:700; padding:9px 0; border-radius:9px; border:1.5px solid rgba(255,255,255,0.16); color:#cfd8e3; cursor:pointer; transition:border-color .12s, background .12s, color .12s; }
+  .fbMob.sel { border-color:#3dff9e; color:#05060a; background:#3dff9e; }
   #fbSend { margin-top:16px; font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:1px; padding:13px; border-radius:10px; border:1.5px solid #3dff9e; color:#05060a; background:#3dff9e; cursor:pointer; opacity:0.4; pointer-events:none; transition:opacity .2s; }
   #fbSend.ready { opacity:1; pointer-events:auto; box-shadow:0 0 20px rgba(61,255,158,0.4); }
   #fbThanks { margin-top:14px; font-size:13px; color:#3dff9e; font-weight:700; display:none; }
@@ -424,6 +429,12 @@
       </div>
       <div id="fbPrompt">How could it be better?</div>
       <textarea id="fbText" placeholder="Optional — what would make it more fun?" rows="3"></textarea>
+      <div id="fbMobileQ">Would you download this as a mobile app?</div>
+      <div id="fbMobileOpts">
+        <span class="fbMob" data-v="yes">Yes!</span>
+        <span class="fbMob" data-v="maybe">Maybe</span>
+        <span class="fbMob" data-v="no">Nah</span>
+      </div>
       <div id="fbSend">SEND FEEDBACK</div>
       <div id="fbThanks">Thanks for the feedback! 🙌</div>
     </div>
@@ -684,7 +695,7 @@
     coins:0, best:0, bestPts:0,
     ownedSkins:['orb','square'], ownedThemes:['classic'], ownedPatterns:['grid'], ownedTrails:['match'], ownedGemskins:['diamond'],
     skin:'orb', theme:'classic', pattern:'grid', trail:'match', gemskin:'diamond',
-    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0, dailyDate:null, dailyBest:0, fbDone:false, fbRating:0, fbRunCount:0,
+    missions:null, missionDay:null, weeklies:null, weekId:null, weekGems:0, weekRuns:0, lbBest:0, scores:[], levelsBeaten:0, dailyDate:null, dailyBest:0, fbDone:false, fbShown:false, fbRating:0, fbRunCount:0,
   }, Store.read()||{});
   // ensure defaults always owned
   ['orb','square'].forEach(s=>{ if(!save.ownedSkins.includes(s)) save.ownedSkins.push(s); });
@@ -1767,18 +1778,25 @@
     s.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); fbRating=parseInt(s.dataset.v,10); paintStars(fbRating); SFX.ui();
       document.getElementById('fbPrompt').classList.add('show');
       document.getElementById('fbText').classList.add('show');
+      document.getElementById('fbMobileQ').classList.add('show');
+      document.getElementById('fbMobileOpts').classList.add('show');
       document.getElementById('fbSend').classList.add('ready');
     });
   });
-  function openFeedback(){ fbRating=0; paintStars(0); document.getElementById('fbText').value=''; document.getElementById('fbText').classList.remove('show'); document.getElementById('fbPrompt').classList.remove('show'); document.getElementById('fbSend').classList.remove('ready'); document.getElementById('fbThanks').style.display='none'; document.getElementById('fbSend').style.display=''; fbPanel.classList.add('show'); }
+  let fbMobile='';
+  const fbMobs=[...document.querySelectorAll('.fbMob')];
+  fbMobs.forEach(m=>{ m.addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); fbMobile=m.dataset.v; fbMobs.forEach(x=>x.classList.toggle('sel',x===m)); SFX.ui(); }); });
+  function openFeedback(){ fbRating=0; fbMobile=''; paintStars(0); fbMobs.forEach(x=>x.classList.remove('sel')); document.getElementById('fbText').value=''; document.getElementById('fbText').classList.remove('show'); document.getElementById('fbPrompt').classList.remove('show'); document.getElementById('fbMobileQ').classList.remove('show'); document.getElementById('fbMobileOpts').classList.remove('show'); document.getElementById('fbSend').classList.remove('ready'); document.getElementById('fbThanks').style.display='none'; document.getElementById('fbSend').style.display=''; fbPanel.classList.add('show'); }
   // make sure typing in the comment box isn't hijacked by the game's tap/flip handler
   (function(){ const ft=document.getElementById('fbText'); ['pointerdown','pointerup','touchstart','click'].forEach(ev=>ft.addEventListener(ev,e=>e.stopPropagation())); })();
   function closeFeedback(){ fbPanel.classList.remove('show'); save.fbDone=true; persist(); }
   document.getElementById('fbClose2').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); closeFeedback(); });
   document.getElementById('fbSend').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); if(!fbRating)return;
-    const comment=document.getElementById('fbText').value.slice(0,500);
+    let comment=document.getElementById('fbText').value.slice(0,500);
+    // fold the "would you download as an app?" answer into the comment so it reaches the form
+    if(fbMobile) comment = '[app: '+fbMobile+'] ' + comment;
     save.fbDone=true; save.fbRating=fbRating; persist();
-    track('feedback_submit',{rating:fbRating, has_comment: comment.length>0});
+    track('feedback_submit',{rating:fbRating, has_comment: (document.getElementById('fbText').value.length>0), wants_app: fbMobile||'unanswered'});
     // open the prefilled Google Form (if configured)
     if(!FB_FORM_BASE.includes('REPLACE')){
       const url=FB_FORM_BASE+'?usp=pp_url&'+FB_RATING_ENTRY+'='+encodeURIComponent(fbRating)+'&'+FB_COMMENT_ENTRY+'='+encodeURIComponent(comment);
@@ -1789,11 +1807,15 @@
     document.getElementById('fbThanks').style.display='block';
     setTimeout(()=>fbPanel.classList.remove('show'), 1400);
   });
-  // show once, automatically, after the player has died a few times (engaged but not nagged)
+  // show ONCE per player, occasionally — a random chance after each game over (never nags twice)
   function maybeShowFeedback(){
-    if(save.fbDone) return false;
+    if(save.fbDone || save.fbShown) return false;        // already given feedback or already prompted once
     const runs=(save.fbRunCount||0)+1; save.fbRunCount=runs; persist();
-    if(runs===4){ setTimeout(openFeedback, 700); return true; } // after the 4th game over
+    if(runs<3) return false;                              // let them play a few first
+    if(Math.random()<0.25){                              // ~1 in 4 game-overs after that
+      save.fbShown=true; persist();                      // mark prompted so it never auto-shows again
+      setTimeout(openFeedback, 700); return true;
+    }
     return false;
   }
 
