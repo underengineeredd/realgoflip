@@ -912,11 +912,12 @@
     if(document.getElementById('boardPanel').classList.contains('show')) return;
     if(document.getElementById('levelsPanel').classList.contains('show')) return;
     if(document.getElementById('howPanel').classList.contains('show')) return;
+    if(document.getElementById('fbPanel').classList.contains('show')) return;
     // a real button handles its own tap (don't also flip)
     if(e.target.closest('.btn') || e.target.closest('#openShop') || e.target.closest('#endRun')) return;
     e.preventDefault(); flip();
   },{passive:false});
-  window.addEventListener('keydown',(e)=>{ if(e.code==='Space'){ e.preventDefault(); if(document.getElementById('shop').classList.contains('show'))return; if(document.getElementById('missionsPanel').classList.contains('show'))return; if(document.getElementById('boardPanel').classList.contains('show'))return; if(document.getElementById('levelsPanel').classList.contains('show'))return; if(document.getElementById('howPanel').classList.contains('show'))return; flip(); }});
+  window.addEventListener('keydown',(e)=>{ if(e.code==='Space'){ if(e.target && (e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')) return; e.preventDefault(); if(document.getElementById('shop').classList.contains('show'))return; if(document.getElementById('missionsPanel').classList.contains('show'))return; if(document.getElementById('boardPanel').classList.contains('show'))return; if(document.getElementById('levelsPanel').classList.contains('show'))return; if(document.getElementById('howPanel').classList.contains('show'))return; if(document.getElementById('fbPanel').classList.contains('show'))return; flip(); }});
 
   // ============ FLOW ============
   const overlay=document.getElementById('overlay'); const tapcue=document.getElementById('tapcue');
@@ -1764,6 +1765,8 @@
     });
   });
   function openFeedback(){ fbRating=0; paintStars(0); document.getElementById('fbText').value=''; document.getElementById('fbText').classList.remove('show'); document.getElementById('fbPrompt').classList.remove('show'); document.getElementById('fbSend').classList.remove('ready'); document.getElementById('fbThanks').style.display='none'; document.getElementById('fbSend').style.display=''; fbPanel.classList.add('show'); }
+  // make sure typing in the comment box isn't hijacked by the game's tap/flip handler
+  (function(){ const ft=document.getElementById('fbText'); ['pointerdown','pointerup','touchstart','click'].forEach(ev=>ft.addEventListener(ev,e=>e.stopPropagation())); })();
   function closeFeedback(){ fbPanel.classList.remove('show'); save.fbDone=true; persist(); }
   document.getElementById('fbClose2').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); closeFeedback(); });
   document.getElementById('fbSend').addEventListener('pointerdown',(e)=>{ e.preventDefault(); e.stopPropagation(); if(!fbRating)return;
