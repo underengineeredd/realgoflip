@@ -1002,8 +1002,8 @@
       if(lvlPowerupsSpawned<quota && points>=milestone){
         const ref=obstacles.find(o=>o.x>player.x+player.r);
         let py=ref?(ref.type==='double'||ref.type==='triple'||ref.type==='stagger'?ref.gaps[0].y:ref.gapY):H*0.5;
-        // weight shield/slow higher in harder levels so it stays fair
-        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','coins'] : ['slow','shield','magnet','coins'];
+        // no 2x-coins in levels (fixed reward) — only useful gameplay powerups
+        const kinds = curLevel>=7 ? ['shield','slow','shield','magnet','slow'] : ['slow','shield','magnet','shield'];
         const kind=kinds[Math.floor(rng()*kinds.length)];
         powerups.push({x:W+40,y:py,r:PU_R*H,got:false,bob:rng()*6.28,kind});
         lvlPowerupsSpawned++;
